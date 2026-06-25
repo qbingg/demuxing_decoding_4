@@ -11,6 +11,8 @@ qt_add_executable(demuxing_decoding_4
     mainwindow.cpp
     mainwindow.h
     mainwindow.ui
+    MyPacketQueue.h
+    MyDemuxThread.h MyDemuxThread.cpp
 )
 
 target_link_libraries(demuxing_decoding_4
