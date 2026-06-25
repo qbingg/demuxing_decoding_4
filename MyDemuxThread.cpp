@@ -52,6 +52,16 @@ int MyDemuxThread::initDemuxThread()
         is->video_stream = video_stream;
         is->video_dec_ctx = video_dec_ctx;
     }
+    int audio_stream_idx = -1;
+    AVCodecContext *audio_dec_ctx = NULL;
+    AVStream *audio_stream = NULL;
+    if (open_codec_context(&audio_stream_idx, &audio_dec_ctx, fmt_ctx, AVMEDIA_TYPE_AUDIO,is->iFile) >= 0) {
+        audio_stream = fmt_ctx->streams[audio_stream_idx];
+
+        is->audio_stream_idx = audio_stream_idx;
+        is->audio_dec_ctx = audio_dec_ctx;
+        is->audio_stream = audio_stream;
+    }
 
     av_dump_format(fmt_ctx, 0, src_filename, 0);
 
@@ -169,6 +179,9 @@ void MyDemuxThread::run()
         if(pkt->stream_index == is->video_stream_idx){
             is->videoq.enqueue(pkt);
             qDebug()<<"解封装线程：完成生产：视频pkt_size :"<<is->videoq.getSize();
+        }else if(pkt->stream_index == is->audio_stream_idx){
+            is->audioq.enqueue(pkt);
+            qDebug()<<"解封装线程：完成生产：音频pkt_size :"<<is->audioq.getSize();
         }else{
             av_packet_unref(pkt);
         }
