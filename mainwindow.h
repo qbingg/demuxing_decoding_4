@@ -20,6 +20,7 @@ extern "C"{
 #include <QMimeData>
 #include "MyDemuxThread.h"
 #include "MyPacketQueue.h"
+#include "MyVideoDecodeThread.h"
 
 
 QT_BEGIN_NAMESPACE
@@ -28,6 +29,7 @@ class MainWindow;
 }
 QT_END_NAMESPACE
 
+// 5 * 256 KB (字节) 1字节Byte = 8比特bit
 #define MAX_VIDEOQ_SIZE (5 * 256 * 1024)
 /* 3个线程共享的变量*/
 struct FFmpegPlayerCtx {
@@ -64,7 +66,7 @@ private:
 
     MyDemuxThread *m_demuxThread = nullptr;
 
-    // MyVideoDecodeThread *m_myVideoDecodeThread = nullptr;
+    MyVideoDecodeThread *m_myVideoDecodeThread = nullptr;
 
 };
 #endif // MAINWINDOW_H

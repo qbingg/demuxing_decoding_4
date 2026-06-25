@@ -52,13 +52,13 @@ void MainWindow::dropEvent(QDropEvent *event)
 
 void MainWindow::on_pushButton_clicked()
 {
-    // if(m_myVideoDecodeThread){
-    //     m_myVideoDecodeThread->requestInterruption();
-    //     // m_myVideoDecodeThread->stopThread();
-    //     m_myVideoDecodeThread->wait();
-    //     delete m_myVideoDecodeThread;
-    //     m_myVideoDecodeThread = nullptr;
-    // }
+    if(m_myVideoDecodeThread){
+        // m_myVideoDecodeThread->requestInterruption();
+        m_myVideoDecodeThread->stopThread();
+        m_myVideoDecodeThread->wait();
+        delete m_myVideoDecodeThread;
+        m_myVideoDecodeThread = nullptr;
+    }
     qDebug()<<"已清空视频线程";
     if(m_demuxThread){
         // m_demuxThread->requestInterruption();
@@ -94,16 +94,16 @@ void MainWindow::on_pushButton_clicked()
         return;
     }
     // create video decode thread
-    // m_myVideoDecodeThread = new MyVideoDecodeThread;
-    // m_myVideoDecodeThread->setPlayerCtx(playerCtx);
-    // connect(m_myVideoDecodeThread,&MyVideoDecodeThread::sendCurrentFrame,this,[=](QImage qimg){
-    //     ui->widget->setPixmap(QPixmap::fromImage(qimg));
-    // });
+    m_myVideoDecodeThread = new MyVideoDecodeThread;
+    m_myVideoDecodeThread->setPlayerCtx(playerCtx);
+    connect(m_myVideoDecodeThread,&MyVideoDecodeThread::sendCurrentFrame,this,[=](QImage qimg){
+        ui->widget->setPixmap(QPixmap::fromImage(qimg));
+    });
 
 
 
 
     m_demuxThread->start();
-    // m_myVideoDecodeThread->start();
+    m_myVideoDecodeThread->start();
 }
 
