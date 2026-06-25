@@ -52,6 +52,14 @@ void MainWindow::dropEvent(QDropEvent *event)
 
 void MainWindow::on_pushButton_clicked()
 {
+    if(m_myAudioDecodeThread){
+        // m_myAudioDecodeThread->requestInterruption();
+        m_myAudioDecodeThread->stopThread();
+        m_myAudioDecodeThread->wait();
+        delete m_myAudioDecodeThread;
+        m_myAudioDecodeThread = nullptr;
+    }
+    qDebug()<<"已清空视频线程";
     if(m_myVideoDecodeThread){
         // m_myVideoDecodeThread->requestInterruption();
         m_myVideoDecodeThread->stopThread();
@@ -100,10 +108,11 @@ void MainWindow::on_pushButton_clicked()
         ui->widget->setPixmap(QPixmap::fromImage(qimg));
     });
 
-
-
+    m_myAudioDecodeThread = new MyAudioDecodeThread;
+    m_myAudioDecodeThread->setPlayerCtx(playerCtx);
 
     m_demuxThread->start();
     m_myVideoDecodeThread->start();
+    m_myAudioDecodeThread->start();
 }
 

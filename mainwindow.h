@@ -18,6 +18,7 @@ extern "C"{
 #include <QMessageBox>
 #include <QDragEnterEvent>
 #include <QMimeData>
+#include "MyAudioDecodeThread.h"
 #include "MyDemuxThread.h"
 #include "MyPacketQueue.h"
 #include "MyVideoDecodeThread.h"
@@ -77,5 +78,6 @@ private:
 
     MyVideoDecodeThread *m_myVideoDecodeThread = nullptr;
 
+    MyAudioDecodeThread *m_myAudioDecodeThread = nullptr;
 };
 #endif // MAINWINDOW_H
