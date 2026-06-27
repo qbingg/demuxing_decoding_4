@@ -138,7 +138,7 @@ void MyAudioDecodeThread::run()
     }
     // 音频参数设置SDL_AudioSpec
     spec.freq = is->audio_dec_ctx->sample_rate;// 采样频率48000
-    spec.format = AUDIO_S16SYS; // 采样点格式 AUDIO_S16SYS
+    spec.format = AUDIO_F32SYS; // 采样点格式 AUDIO_S16SYS
     spec.channels = 1; //is->audio_dec_ctx->ch_layout.nb_channels;// 2通道
     spec.silence = 0;
     spec.samples = 1024;// 23.2ms -> 46.4ms 每次读取的采样数量，多久产生一次回调和 samples
