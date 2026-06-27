@@ -55,6 +55,14 @@ struct FFmpegPlayerCtx {
 
     MyAudioBufQueue audio_buf_q;
 
+    /* 不要让 SDL spec 直接跟着输入文件走，而是跟着你的目标输出格式走。
+     * 约定：SDL照着这些格式初始化，ffmpeg经过sws转为这些格式
+     */
+    int audio_tgt_freq = 48000;
+    AVSampleFormat audio_tgt_fmt = AV_SAMPLE_FMT_S16;
+    SDL_AudioFormat audio_tgt_sdl_fmt = AUDIO_S16SYS;
+    int audio_tgt_channels = 2;
+
     // int width, height;我直接使用了AVFrame解码后自带的宽高，也就不需要video_dec_ctx->width;
     // enum AVPixelFormat pix_fmt;在demux初始化，在yuv转rgb用到，但是这个项目就是yuv420P转rgb，不考虑其他格式的话，就不需要这个变量
 };
