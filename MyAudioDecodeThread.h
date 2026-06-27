@@ -11,6 +11,7 @@ extern "C" {
 }
 
 #include <QThread>
+#include <SDL.h>
 struct FFmpegPlayerCtx;
 class MyAudioDecodeThread : public QThread
 {

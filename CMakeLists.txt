@@ -16,6 +16,7 @@ qt_add_executable(demuxing_decoding_4
     MyVideoDecodeThread.h MyVideoDecodeThread.cpp
     MyDisplayImgWidget.h
     MyAudioDecodeThread.h MyAudioDecodeThread.cpp
+    MyAudioBufQueue.h
 )
 
 target_link_libraries(demuxing_decoding_4
@@ -72,3 +73,32 @@ target_link_libraries(demuxing_decoding_4
 #         "${FFMPEG_DIR}/bin/"
 #         $<TARGET_FILE_DIR:demuxing_decoding_4>
 # )
+
+#include <SDL.h>
+set(SDL_DIR "D:/Codes/cppCode/FFmpegCode/014/ffmpeg-simple-player/thirdparty/SDL2-2.0.22")
+target_include_directories(demuxing_decoding_4
+    PRIVATE
+        ${SDL_DIR}/include
+)
+target_link_directories(demuxing_decoding_4
+    PRIVATE
+        ${SDL_DIR}/lib/x64
+)
+# 4. 添加编译定义，避免 SDL 重定义 main
+target_compile_definitions(demuxing_decoding_4
+    PRIVATE
+        SDL_MAIN_HANDLED
+)
+target_link_libraries(demuxing_decoding_4
+    PRIVATE
+        SDL2 # 只链接 SDL2，不链接 SDL2main
+)
+# # 6. 自动复制 DLL 到输出目录（可选）
+# # 添加到“高级系统设置”可注释掉：D:\Codes\cppCode\FFmpegCode\ffmpeg-master-latest-win64-gpl-shared\bin
+# # 但是要注意只能有一个ffmpeg路径，否则cmd输入ffmpeg就会显示拒绝访问
+add_custom_command(TARGET demuxing_decoding_4 POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${SDL_DIR}/lib/x64"
+        $<TARGET_FILE_DIR:demuxing_decoding_4>
+)
+

@@ -18,6 +18,7 @@ extern "C"{
 #include <QMessageBox>
 #include <QDragEnterEvent>
 #include <QMimeData>
+#include "MyAudioBufQueue.h"
 #include "MyAudioDecodeThread.h"
 #include "MyDemuxThread.h"
 #include "MyPacketQueue.h"
@@ -34,6 +35,7 @@ QT_END_NAMESPACE
 // 可知，单位是Byte，所以这里的16估计和16位深bit，没什么关系。
 #define MAX_AUDIOQ_SIZE (5 * 16 * 1024)
 #define MAX_AUDIO_FRAME_SIZE 192000
+#define MAX_AUDIO_BUF_Q_SIZE ((MAX_AUDIO_FRAME_SIZE * 3) / 2)
 // 5 * 256 KB (字节) 1字节Byte = 8比特bit
 #define MAX_VIDEOQ_SIZE (5 * 256 * 1024)
 /* 3个线程共享的变量*/
@@ -50,6 +52,8 @@ struct FFmpegPlayerCtx {
     AVCodecContext *audio_dec_ctx = NULL;
     AVStream *audio_stream = NULL;
     MyPacketQueue audioq;
+
+    MyAudioBufQueue audio_buf_q;
 
     // int width, height;我直接使用了AVFrame解码后自带的宽高，也就不需要video_dec_ctx->width;
     // enum AVPixelFormat pix_fmt;在demux初始化，在yuv转rgb用到，但是这个项目就是yuv420P转rgb，不考虑其他格式的话，就不需要这个变量

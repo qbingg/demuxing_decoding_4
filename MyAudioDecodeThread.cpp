@@ -63,6 +63,11 @@ int MyAudioDecodeThread::decode_packet(AVCodecContext *dec, const AVPacket *pkt,
             qDebug() << "  raw (hex):" << raw.left(32).toHex();
         }
 
+        //第一步：将解码后的数据拷贝到audio_buf
+        is->audio_buf_q.enqueue((const char*)frame->data[0],
+                                frame->nb_samples * bytes_per_sample);
+        qDebug()<<"audio_buf队列数量："<<is->audio_buf_q.getSize();
+
         av_frame_unref(frame);
     }
 
@@ -105,10 +110,44 @@ void MyAudioDecodeThread::run()
         goto end;
     }
 
+    /* SDL初始化*/
+    SDL_AudioSpec spec;
+    //SDL initialize
+    if (SDL_Init(SDL_INIT_AUDIO))    // 支持AUDIO
+    {
+        fprintf(stderr, "Could not initialize SDL - %s\n", SDL_GetError());
+        return;
+    }
+    // 音频参数设置SDL_AudioSpec
+    spec.freq = is->audio_dec_ctx->sample_rate;// 采样频率48000
+    spec.format = AUDIO_S16SYS; // 采样点格式 AUDIO_S16SYS
+    spec.channels = 1; //is->audio_dec_ctx->ch_layout.nb_channels;// 2通道
+    spec.silence = 0;
+    spec.samples = 1024;// 23.2ms -> 46.4ms 每次读取的采样数量，多久产生一次回调和 samples
+    // spec.callback = FN_Audio_Cb; // 回调函数
+    spec.userdata = this;
+
+    qDebug() <<"spec.freq ="<<is->audio_dec_ctx->sample_rate
+             <<"spec.channels ="<<is->audio_dec_ctx->ch_layout.nb_channels;
+    //打开音频设备
+    if (SDL_OpenAudio(&spec, NULL))
+    {
+        fprintf(stderr, "Failed to open audio device, %s\n", SDL_GetError());
+        goto _FAIL;
+    }
+    //play audio
+    // SDL_PauseAudio(0);
+
     while (true) {
 
         if(m_stop)
             break;
+
+        // 检查audio_buf队列的数量
+        if(is->audio_buf_q.getSize() > MAX_AUDIO_BUF_Q_SIZE){
+            msleep(10);// SDL_Delay(10);
+            continue;
+        }
 
         //尝试从队列获取一个包（阻塞）
         if(is->audioq.dequeue(pkt,m_stop) < 0){
@@ -122,7 +161,12 @@ void MyAudioDecodeThread::run()
             break;
         qDebug()<<"解码线程：完成消费：pkt_size :"<<is->videoq.getSize();
     }
-
+_FAIL:
+    //release some resources
+    // 关闭音频设备
+    // SDL_CloseAudio();
+    //quit SDL
+    SDL_Quit();
 end:
     av_frame_free(&frame);
     av_packet_free(&pkt);
