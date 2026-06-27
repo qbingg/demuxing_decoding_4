@@ -35,7 +35,7 @@ public:
         return ret;
     }
     //出队
-    int dequeue(char* data, int len, std::atomic<bool> &quit)
+    int dequeue(unsigned char* data, int len, std::atomic<bool> &quit)
     {
         int ret = 0;
         {

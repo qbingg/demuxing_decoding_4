@@ -31,6 +31,7 @@ public:
      */
     int decode_packet(AVCodecContext *dec, const AVPacket *pkt ,AVFrame *frame);
 
+    void getAudioData(unsigned char *stream, int len);
 
 signals:
     void sendMessage();

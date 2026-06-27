@@ -1,6 +1,13 @@
 #include "MyAudioDecodeThread.h"
 #include "mainwindow.h" //FFmpegPlayerCtx结构体前向声明后，还需要在.cpp包含该头文件
 #pragma warning(disable:4576)
+
+static void FN_Audio_Cb(void *userdata, Uint8 *stream, int len)
+{
+    MyAudioDecodeThread *adt = (MyAudioDecodeThread*)userdata;
+    adt->getAudioData(stream,len);
+}
+
 MyAudioDecodeThread::MyAudioDecodeThread(QObject *parent)
     : QThread(parent)
 {
@@ -74,6 +81,17 @@ int MyAudioDecodeThread::decode_packet(AVCodecContext *dec, const AVPacket *pkt,
     return ret;
 }
 
+void MyAudioDecodeThread::getAudioData(unsigned char *stream, int len)
+{
+    // decoder is not ready or in pause state, output silence
+    if (!is->audio_dec_ctx) {
+        memset(stream, 0, len);
+        return;
+    }
+
+    is->audio_buf_q.dequeue(stream,len,m_stop);
+}
+
 void MyAudioDecodeThread::setPlayerCtx(FFmpegPlayerCtx *ctx)
 {
     is = ctx;
@@ -124,7 +142,7 @@ void MyAudioDecodeThread::run()
     spec.channels = 1; //is->audio_dec_ctx->ch_layout.nb_channels;// 2通道
     spec.silence = 0;
     spec.samples = 1024;// 23.2ms -> 46.4ms 每次读取的采样数量，多久产生一次回调和 samples
-    // spec.callback = FN_Audio_Cb; // 回调函数
+    spec.callback = FN_Audio_Cb; // 回调函数
     spec.userdata = this;
 
     qDebug() <<"spec.freq ="<<is->audio_dec_ctx->sample_rate
@@ -136,7 +154,7 @@ void MyAudioDecodeThread::run()
         goto _FAIL;
     }
     //play audio
-    // SDL_PauseAudio(0);
+    SDL_PauseAudio(0);
 
     while (true) {
 
@@ -164,7 +182,7 @@ void MyAudioDecodeThread::run()
 _FAIL:
     //release some resources
     // 关闭音频设备
-    // SDL_CloseAudio();
+    SDL_CloseAudio();
     //quit SDL
     SDL_Quit();
 end:
