@@ -2,6 +2,8 @@
 #include "mainwindow.h" //FFmpegPlayerCtx结构体前向声明后，还需要在.cpp包含该头文件
 #pragma warning(disable:4576)
 
+Q_LOGGING_CATEGORY(logAudioClock, "player.audio.decode.clock") // 定义，名称为 ""
+
 static void FN_Audio_Cb(void *userdata, Uint8 *stream, int len)
 {
     MyAudioDecodeThread *adt = (MyAudioDecodeThread*)userdata;

@@ -16,6 +16,10 @@ extern "C" {
 #include <QDebug>
 #include <QThread>
 #include <SDL.h>
+
+#include <QLoggingCategory>
+Q_DECLARE_LOGGING_CATEGORY(logAudioClock) // 声明
+
 struct FFmpegPlayerCtx;
 class MyAudioDecodeThread : public QThread
 {
