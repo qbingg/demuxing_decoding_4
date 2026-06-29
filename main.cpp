@@ -10,7 +10,8 @@ int main(int argc, char *argv[])
 {
     QLoggingCategory::setFilterRules(
         "*.debug=false\n"
-        "player.audio.decode.clock.debug=true\n"
+        "player.audio.decode.clock.debug=false\n"
+        "player.video.decode.sync.debug=true\n"
         );
     qDebug()<<"测试1，qDebug()：这是过滤调试信息的测试。";
     qCDebug(logAudioClock)<<"测试2，qCDebug(logAudioClock)：这是过滤调试信息的测试。";

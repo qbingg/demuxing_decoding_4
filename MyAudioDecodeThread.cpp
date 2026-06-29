@@ -129,6 +129,8 @@ void MyAudioDecodeThread::getAudioData(unsigned char *stream, int len)
         qCDebug(logAudioClock) <<"total_dequeued_pcm_bytes:\t"<<bytes<<"(Byte)\t"
                                <<"samples:\t"<<samples<<"\t"
                                <<"duration:\t"<<duration;
+
+        is->audio_clock = duration;
     }
 }
 

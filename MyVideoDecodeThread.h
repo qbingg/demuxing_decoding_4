@@ -13,6 +13,9 @@ extern "C" {
 #include <QFileInfo>
 #include <QThread>
 
+#include <QLoggingCategory>
+Q_DECLARE_LOGGING_CATEGORY(logVideoSync) // 声明
+
 struct FFmpegPlayerCtx;
 class MyVideoDecodeThread : public QThread
 {
