@@ -63,6 +63,9 @@ struct FFmpegPlayerCtx {
     SDL_AudioFormat audio_tgt_sdl_fmt = AUDIO_S16SYS;
     int audio_tgt_channels = 2;
 
+    std::atomic<uint64_t> total_enqueued_pcm_bytes = 0;//记录pcm入队列size数（Byte）
+    std::atomic<uint64_t> total_dequeued_pcm_bytes = 0;//记录pcm入队列size数（Byte）
+
     // int width, height;我直接使用了AVFrame解码后自带的宽高，也就不需要video_dec_ctx->width;
     // enum AVPixelFormat pix_fmt;在demux初始化，在yuv转rgb用到，但是这个项目就是yuv420P转rgb，不考虑其他格式的话，就不需要这个变量
 };
