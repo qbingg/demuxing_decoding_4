@@ -73,44 +73,9 @@ int MyAudioDecodeThread::decode_packet(AVCodecContext *dec, const AVPacket *pkt,
         /**
          *  将数据转化为目标格式
          */
-        /* 第1步、init变量 swr_ctx */
-        SwrContext *swr_ctx = nullptr;
-        swr_ctx = swr_alloc();//ffmpeg文档：与libavcodec和libavformat不同，此结构是不透明的。这意味着，如果您想设置选项，必须使用AVOptions API，而不能直接为该结构的成员设置值。
-        //输入音频格式，直接用音频解码上下文的参数即可
-        av_opt_set_chlayout(swr_ctx, "in_chlayout", &is->audio_dec_ctx->ch_layout, 0);
-        av_opt_set_int(swr_ctx, "in_sample_rate",       is->audio_dec_ctx->sample_rate, 0);
-        av_opt_set_sample_fmt(swr_ctx, "in_sample_fmt", is->audio_dec_ctx->sample_fmt, 0);
-
-        AVChannelLayout outLayout;
-        // use stereo
-        av_channel_layout_default(&outLayout, 2);
-        //输入音频格式，建议在FFmpegPlayerCtx声明输出格式，而不是使用魔法数字
-        av_opt_set_chlayout(swr_ctx, "out_chlayout", &outLayout, 0);
-        av_opt_set_int(swr_ctx, "out_sample_rate",       48000, 0);
-        av_opt_set_sample_fmt(swr_ctx, "out_sample_fmt", AV_SAMPLE_FMT_S16, 0);
-        swr_init(swr_ctx);
-        /* 第2步、转换音频格式为目标格式 */
-        int upper_bound_samples = swr_get_out_samples(swr_ctx, frame->nb_samples);
-        uint8_t *out[4] = {0};
-        out[0] = (uint8_t*)av_malloc(upper_bound_samples * 2 * 2);
-        // number of samples output per channel
-        int samples = swr_convert(swr_ctx,
-                                  out,
-                                  upper_bound_samples,
-                                  (const uint8_t**)frame->data,
-                                  frame->nb_samples
-                                  );
-        if (samples > 0) {
-            // memcpy(is->audio_buf, out[0], samples * 2 * 2);
-            // 入队，数据拷贝到audio_buf
-            is->audio_buf_q.enqueue((const char*)out[0],
-                                    samples * 2 * 2);
-        }
-        /* 第3步、释放局部资源 */
-        av_free(out[0]);
-        /* 第4步、释放全局资源 */
-        swr_free(&swr_ctx);
-        swr_ctx = nullptr;
+        QByteArray dst;
+        swr_cvt_pcm(frame,dst);
+        is->audio_buf_q.enqueue(dst.data(),dst.size());
 
         // //第一步：将解码后的数据拷贝到audio_buf
         // is->audio_buf_q.enqueue((const char*)frame->data[0],
