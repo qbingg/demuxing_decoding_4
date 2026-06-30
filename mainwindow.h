@@ -29,6 +29,7 @@ extern "C"{
 #include <QValueAxis>
 #include <QChartView>
 #include <QPainter>
+#include <QGraphicsLayout>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
