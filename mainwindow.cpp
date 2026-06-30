@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+Q_LOGGING_CATEGORY(logAudioChartView, "player.audio.chartview") // 定义，名称为 ""
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -13,6 +15,42 @@ MainWindow::MainWindow(QWidget *parent)
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+void MainWindow::initPcmChartView(QLineSeries *waveSeries, QValueAxis *axisX, QValueAxis *axisY, QChartView *pcmChartView)
+{
+    if(!waveSeries || !axisX || !axisY|| !pcmChartView)
+        return;
+
+    QChart *chart = new QChart();
+    chart->addSeries(waveSeries);
+    chart->addAxis(axisX, Qt::AlignBottom);
+    chart->addAxis(axisY, Qt::AlignLeft);
+
+    //波形数据使用这两个坐标轴映射
+    waveSeries->attachAxis(axisX);
+    waveSeries->attachAxis(axisY);
+
+    // 显示到UI的QChartView控件（对象名：chartView）
+    pcmChartView->setChart(chart);
+    pcmChartView->setRenderHint(QPainter::Antialiasing); // 抗锯齿
+
+    /*为pcm图表显示进行布局优化*/
+    chart->setTitle("");//去掉标题
+    chart->legend()->hide();//隐藏图表用于解释颜色和系列名称的图例框
+    chart->layout()->setContentsMargins(0, 0, 0, 0);//去掉外层layout的margin间隔
+    chart->setMargins(QMargins(0, 0, 0, 0));//去掉chart内层的margin间隔
+    chart->setBackgroundRoundness(0);//去掉圆角（Qt文档：此属性表示图表背景四角处圆角的直径。）
+    chart->setAnimationOptions(QChart::NoAnimation); // 静态图关闭动画
+    // 去掉坐标轴标题
+    axisX->setTitleVisible(false);
+    axisY->setTitleVisible(false);
+    // 去掉坐标轴刻度
+    axisX->setLabelsVisible(false);
+    axisY->setLabelsVisible(false);
+    // // 去掉坐标轴网格
+    // axisX->setGridLineVisible(false);
+    // axisY->setGridLineVisible(false);
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
@@ -111,38 +149,16 @@ void MainWindow::on_pushButton_clicked()
     m_myAudioDecodeThread = new MyAudioDecodeThread;
     m_myAudioDecodeThread->setPlayerCtx(playerCtx);
     // 初始化pcmChartView
-    QChart *chart = new QChart();
-    chart->setTitle("");
-    chart->legend()->hide();
-    chart->setMargins(QMargins(0, 0, 0, 0));
-    chart->layout()->setContentsMargins(0, 0, 0, 0);
-    chart->setBackgroundRoundness(0);
-    chart->setAnimationOptions(QChart::NoAnimation); // 静态图关闭动画
-
     QLineSeries *waveSeries = new QLineSeries();
     waveSeries->setName("音频波形");
     waveSeries->setPen(QPen(QColor(0, 180, 255), 1)); // 浅蓝色线条
-    chart->addSeries(waveSeries);
-
-    // 配置X/Y轴（X轴总时间，Y轴16位PCM范围）
     QValueAxis *axisX = new QValueAxis();
     axisX->setTitleText("时间 (s)");
-    // axisX->setRange(0, totalSamples / sampleRate); // 总时长
     axisX->setRange(0, 1024 / static_cast<double>(playerCtx->audio_tgt_freq)); // 总时长
-
     QValueAxis *axisY = new QValueAxis();
     axisY->setTitleText("采样值");
     axisY->setRange(-32768, 32767); // 16位有符号整数范围
-
-    // 绑定坐标轴
-    chart->addAxis(axisX, Qt::AlignBottom);
-    chart->addAxis(axisY, Qt::AlignLeft);
-    waveSeries->attachAxis(axisX);
-    waveSeries->attachAxis(axisY);
-
-    // 显示到UI的QChartView控件（对象名：chartView）
-    ui->pcmChartView->setChart(chart);
-    ui->pcmChartView->setRenderHint(QPainter::Antialiasing); // 抗锯齿
+    initPcmChartView(waveSeries,axisX,axisY,ui->pcmChartView);
 
     connect(m_myAudioDecodeThread,&MyAudioDecodeThread::sendDequeuedPcmBytes,this,[=](QByteArray bytes){
 
@@ -164,8 +180,8 @@ void MainWindow::on_pushButton_clicked()
                 waveSeries->append(timeSec, pcmValue);
             }
 
-            qCDebug(logVideoSync) <<"x轴最大值(1024个采样点的时长)："<<(1024 / static_cast<double>(playerCtx->audio_tgt_freq))<<"\t"
-                                  <<"最大采样点时间是："<<  (static_cast<double>(totalSamples) / static_cast<double>(sampleRate));
+            qCDebug(logAudioChartView) <<"x轴最大值(1024个采样点的时长)："<<(1024 / static_cast<double>(playerCtx->audio_tgt_freq))<<"\t"
+                                       <<"最大采样点时间是："<<  (static_cast<double>(totalSamples) / static_cast<double>(sampleRate));
         }
     },Qt::QueuedConnection);//确保不是子线程操作GUI线程
 

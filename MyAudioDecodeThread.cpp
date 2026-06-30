@@ -8,6 +8,8 @@ static void FN_Audio_Cb(void *userdata, Uint8 *stream, int len)
 {
     MyAudioDecodeThread *adt = (MyAudioDecodeThread*)userdata;
     adt->getAudioData(stream,len);
+
+    qCDebug(logAudioChartView) <<"(1024*byte数*声道)FN_Audio_Cb len：\t"<<len;
 }
 
 MyAudioDecodeThread::MyAudioDecodeThread(QObject *parent)

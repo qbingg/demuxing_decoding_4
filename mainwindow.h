@@ -31,6 +31,9 @@ extern "C"{
 #include <QPainter>
 #include <QGraphicsLayout>
 
+#include <QLoggingCategory>
+Q_DECLARE_LOGGING_CATEGORY(logAudioChartView) // 声明
+
 QT_BEGIN_NAMESPACE
 namespace Ui {
 class MainWindow;
@@ -85,6 +88,11 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
+    void initPcmChartView(QLineSeries *waveSeries,
+                          QValueAxis *axisX,
+                          QValueAxis *axisY,
+                          QChartView *pcmChartView);
 
 protected:
     void dragEnterEvent(QDragEnterEvent *event);
