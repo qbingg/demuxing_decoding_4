@@ -167,17 +167,29 @@ void MainWindow::on_pushButton_clicked()
         double bytes_per_sample = av_get_bytes_per_sample(playerCtx->audio_tgt_fmt);
 
         if(bytes_per_sample == 2){
-            int totalSamples = bytes.size() / sizeof(qint16); // 总采样点数
+            int totalSamples = bytes.size() / sizeof(qint16); // 总采样点数，多声道 {LR LR LR...} = 1024 * 2
             qint16 *sampleData = reinterpret_cast<qint16*>(bytes.data());
+            const int totalFrames = channels > 0 ?  (totalSamples / channels) : 0;
+
 
             waveSeries->clear();
 
             // 3. 填充数据：X轴=时间(秒)，Y轴=16位PCM采样值
             const qreal sampleRate = playerCtx->audio_tgt_freq;//44100.0;
-            for (int i = 0; i < totalSamples; i+=100) {
-                qreal timeSec = i / sampleRate;        // X轴：时间
-                qreal pcmValue = sampleData[i];       // Y轴：采样值
-                waveSeries->append(timeSec, pcmValue);
+            // for (int i = 0; i < totalSamples; i+=100) {
+            //     qreal timeSec = i / sampleRate;        // X轴：时间
+            //     qreal pcmValue = sampleData[i];       // Y轴：采样值
+            //     waveSeries->append(timeSec, pcmValue);
+            // }
+            for (int frameIndex = 0; frameIndex < totalFrames; frameIndex+=16) {
+                const int sampleIndex = frameIndex * channels;
+                qreal timeSec = frameIndex / sampleRate;
+                qreal sampleDataL = sampleData[sampleIndex];
+                waveSeries->append(timeSec, sampleDataL);
+                if(channels > 2){
+                    qreal sampleDataR = sampleData[sampleIndex + 1];
+                    waveSeries->append(timeSec, sampleDataR);
+                }
             }
 
             qCDebug(logAudioChartView) <<"x轴最大值(1024个采样点的时长)："<<(1024 / static_cast<double>(playerCtx->audio_tgt_freq))<<"\t"
