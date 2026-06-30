@@ -16,7 +16,21 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0">
     <item>
-     <widget class="MyDisplayImgWidget" name="widget" native="true"/>
+     <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="4,1">
+      <item>
+       <widget class="MyDisplayImgWidget" name="widget" native="true"/>
+      </item>
+      <item>
+       <widget class="QChartView" name="pcmChartView" native="true">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>200</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
@@ -74,6 +88,12 @@
    <class>MyDisplayImgWidget</class>
    <extends>QWidget</extends>
    <header>MyDisplayImgWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>QChartView</class>
+   <extends>QWidget</extends>
+   <header>QChartView.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

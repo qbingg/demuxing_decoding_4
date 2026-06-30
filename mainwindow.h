@@ -24,6 +24,11 @@ extern "C"{
 #include "MyPacketQueue.h"
 #include "MyVideoDecodeThread.h"
 
+#include <QChart>
+#include <QLineSeries>
+#include <QValueAxis>
+#include <QChartView>
+#include <QPainter>
 
 QT_BEGIN_NAMESPACE
 namespace Ui {

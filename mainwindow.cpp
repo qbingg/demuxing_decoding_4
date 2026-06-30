@@ -110,6 +110,56 @@ void MainWindow::on_pushButton_clicked()
 
     m_myAudioDecodeThread = new MyAudioDecodeThread;
     m_myAudioDecodeThread->setPlayerCtx(playerCtx);
+    connect(m_myAudioDecodeThread,&MyAudioDecodeThread::sendDequeuedPcmBytes,this,[=](QByteArray bytes){
+
+        //将byte转为采样点：公式：Byte = ( sample * 采样点的位深 ) * 声道数
+        double channels = static_cast<double>(playerCtx->audio_tgt_channels);
+        double bytes_per_sample = av_get_bytes_per_sample(playerCtx->audio_tgt_fmt);
+
+        if(bytes_per_sample == 2){
+            int totalSamples = bytes.size() / sizeof(qint16); // 总采样点数
+            qint16 *sampleData = reinterpret_cast<qint16*>(bytes.data());
+
+            // 2. 创建波形序列
+            QLineSeries *waveSeries = new QLineSeries();
+            waveSeries->setName("音频波形");
+            waveSeries->setPen(QPen(QColor(0, 180, 255), 1)); // 浅蓝色线条
+
+            // 3. 填充数据：X轴=时间(秒)，Y轴=16位PCM采样值
+            const qreal sampleRate = playerCtx->audio_tgt_freq;//44100.0;
+            for (int i = 0; i < totalSamples; i+=100) {
+                qreal timeSec = i / sampleRate;        // X轴：时间
+                qreal pcmValue = sampleData[i];       // Y轴：采样值
+                waveSeries->append(timeSec, pcmValue);
+            }
+
+            // 4. 创建图表并配置
+            QChart *chart = new QChart();
+            chart->setTitle("PCM音频静态波形图");
+            chart->addSeries(waveSeries);
+            chart->legend()->setVisible(true);
+            chart->setAnimationOptions(QChart::NoAnimation); // 静态图关闭动画
+
+            // 5. 配置X/Y轴（X轴总时间，Y轴16位PCM范围）
+            QValueAxis *axisX = new QValueAxis();
+            axisX->setTitleText("时间 (s)");
+            axisX->setRange(0, totalSamples / sampleRate); // 总时长
+
+            QValueAxis *axisY = new QValueAxis();
+            axisY->setTitleText("采样值");
+            axisY->setRange(-32768, 32767); // 16位有符号整数范围
+
+            // 绑定坐标轴
+            chart->addAxis(axisX, Qt::AlignBottom);
+            chart->addAxis(axisY, Qt::AlignLeft);
+            waveSeries->attachAxis(axisX);
+            waveSeries->attachAxis(axisY);
+
+            // 6. 显示到UI的QChartView控件（对象名：chartView）
+            ui->pcmChartView->setChart(chart);
+            ui->pcmChartView->setRenderHint(QPainter::Antialiasing); // 抗锯齿
+        }
+    },Qt::QueuedConnection);//确保不是子线程操作GUI线程
 
     m_demuxThread->start();
     m_myVideoDecodeThread->start();

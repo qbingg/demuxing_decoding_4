@@ -123,6 +123,7 @@ public:
 
 signals:
     void sendMessage();
+    void sendDequeuedPcmBytes(QByteArray);
 
 private:
     FFmpegPlayerCtx *is = nullptr;
