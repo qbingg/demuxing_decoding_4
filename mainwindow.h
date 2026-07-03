@@ -33,6 +33,7 @@ extern "C"{
 
 #include <QLoggingCategory>
 Q_DECLARE_LOGGING_CATEGORY(logAudioChartView) // 声明
+Q_DECLARE_LOGGING_CATEGORY(logAudioChartView2) // 声明
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
