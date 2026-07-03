@@ -149,6 +149,7 @@ void MainWindow::on_pushButton_clicked()
     m_myAudioDecodeThread = new MyAudioDecodeThread;
     m_myAudioDecodeThread->setPlayerCtx(playerCtx);
     // 初始化pcmChartView
+    // 基于出队dequeue单次的pcm数据
     QLineSeries *waveSeries = new QLineSeries();
     waveSeries->setName("音频波形");
     waveSeries->setPen(QPen(QColor(0, 180, 255), 1)); // 浅蓝色线条
@@ -159,6 +160,19 @@ void MainWindow::on_pushButton_clicked()
     axisY->setTitleText("采样值");
     axisY->setRange(-32768, 32767); // 16位有符号整数范围
     initPcmChartView(waveSeries,axisX,axisY,ui->pcmChartView);
+    // 进度条波形图，累计的pcm数据
+    QLineSeries *durWaveSeries = new QLineSeries();
+    durWaveSeries->setName("音频波形");
+    durWaveSeries->setPen(QPen(QColor(0, 180, 255), 1)); // 浅蓝色线条
+    QValueAxis *durAxisX = new QValueAxis();
+    durAxisX->setTitleText("时间 (s)");
+    durAxisX->setRange(0, (playerCtx->audio_stream->duration * av_q2d(playerCtx->audio_stream->time_base))); // 时长 0~duration(音频流)，注意要考虑时间基
+    QValueAxis *durAxisY = new QValueAxis();
+    durAxisY->setTitleText("采样值");
+    durAxisY->setRange(-32768, 32767); // 16位有符号整数范围
+    initPcmChartView(durWaveSeries,durAxisX,durAxisY,ui->durPcmChartView);
+    durAxisX->setLabelsVisible(true);//单独开启durAxisX的刻度
+
 
     connect(m_myAudioDecodeThread,&MyAudioDecodeThread::sendDequeuedPcmBytes,this,[=](QByteArray bytes){
 
@@ -191,6 +205,11 @@ void MainWindow::on_pushButton_clicked()
                     waveSeries->append(timeSec, sampleDataR);
                 }
             }
+            //取每次出队的首个sampleData[L]、sampleData[R]
+            //时间直接取音频时钟（当前时刻）
+            durWaveSeries->append(playerCtx->audio_clock, sampleData[0]);
+            if(channels > 2)
+                durWaveSeries->append(playerCtx->audio_clock, sampleData[1]);
 
             qCDebug(logAudioChartView) <<"x轴最大值(1024个采样点的时长)："<<(1024 / static_cast<double>(playerCtx->audio_tgt_freq))<<"\t"
                                        <<"最大采样点时间是："<<  (static_cast<double>(totalSamples) / static_cast<double>(sampleRate));
