@@ -198,6 +198,19 @@ void MainWindow::on_pushButton_clicked()
     durAxisY2->setRange(-32768, 32767); // 16位有符号整数范围
     initPcmChartView(durWaveSeries2,durAxisX2,durAxisY2,ui->durPcmChartView2);
     durAxisX2->setLabelsVisible(true);//单独开启durAxisX的刻度
+    /*"0~播放时间"波形图，累计的pcm数据*/
+    //1、等间隔法（分块取队首）
+    QLineSeries *durWaveSeries3 = new QLineSeries();
+    durWaveSeries3->setName("音频波形\"0~播放时间\"：等间隔法（分块取队首）");
+    durWaveSeries3->setPen(QPen(QColor(0, 180, 255), 1)); // 浅蓝色线条
+    QValueAxis *durAxisX3 = new QValueAxis();
+    durAxisX3->setTitleText("时间 (s)");
+    durAxisX3->setRange(0, (playerCtx->audio_stream->duration * av_q2d(playerCtx->audio_stream->time_base))); // 时长 0~播放时间
+    QValueAxis *durAxisY3 = new QValueAxis();
+    durAxisY3->setTitleText("采样值");
+    durAxisY3->setRange(-32768, 32767); // 16位有符号整数范围
+    initPcmChartView(durWaveSeries3,durAxisX3,durAxisY3,ui->durPcmChartView3);
+    durAxisX3->setLabelsVisible(true);//单独开启durAxisX的刻度
 
     connect(m_myAudioDecodeThread,&MyAudioDecodeThread::sendDequeuedPcmBytes,this,[=](QByteArray bytes){
         //涉及除法的就声明为double(qreal)
@@ -213,6 +226,8 @@ void MainWindow::on_pushButton_clicked()
             int totalSamples = bytes.size() / sizeof(qint16); // 总采样点数，多声道 {LR LR LR...} = 1024 * 2
             const int totalFrames = channels > 0 ?  (totalSamples / channels) : 0;
 
+            /**
+             * 基于出队dequeue单次的pcm数据*/
             /* 1、等间隔法（分块取队首）*/
             {
                 constexpr int INTERVAL = 16;//0、16、32、48....1024，特例：间隔=1
@@ -339,6 +354,32 @@ void MainWindow::on_pushButton_clicked()
                 // waveSeries2->clear();
                 // waveSeries2->replace(points);
                 durWaveSeries2->append(points);//末尾追加，而不是清空替换
+            }
+            /**
+             * "0~播放时间"波形图，累计的pcm数据*/
+            /* 1、等间隔法（分块取队首）*/
+            {
+                constexpr int INTERVAL = 1024;//0、16、32、48....1024，特例：间隔=1，间隔=1024
+                QList<QPointF> points;//==(1024/1024)*声道=2
+                points.reserve((totalFrames/INTERVAL) * 2); // 每个间隔区间两个点：分别是左声道、右声道
+                for (int frameIndex = 0; frameIndex < totalFrames; frameIndex+=INTERVAL) {
+                    const int sampleIndex = frameIndex * channels;
+                    qreal timeSec = frameIndex / sampleRate;
+                    qint16 sampleDataL = sampleData[sampleIndex];
+                    // waveSeries->append(timeSec, sampleDataL);
+                    // points.append(QPointF(timeSec, sampleDataL));
+                    points.append(QPointF(playerCtx->audio_clock, sampleDataL));//改用音频时钟
+                    if(channels > 2){
+                        qint16 sampleDataR = sampleData[sampleIndex + 1];
+                        // waveSeries->append(timeSec, sampleDataR);
+                        // points.append(QPointF(timeSec, sampleDataR));
+                        points.append(QPointF(playerCtx->audio_clock, sampleDataR));//改用音频时钟
+                    }
+                }
+                // waveSeries->clear();
+                // waveSeries->replace(points);
+                durWaveSeries3->append(points);//末尾追加，而不是清空替换
+                durAxisX3->setMax(playerCtx->audio_clock);// 时长 0~播放时间
             }
         }
     },Qt::QueuedConnection);//确保不是子线程操作GUI线程
