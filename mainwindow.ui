@@ -14,7 +14,7 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0,0,0,0,0,0">
+   <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0,0,0,0,0,0,0">
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="4,1,1">
       <item>
@@ -40,7 +40,7 @@
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>100</height>
+        <height>50</height>
        </size>
       </property>
      </widget>
@@ -50,7 +50,7 @@
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>100</height>
+        <height>50</height>
        </size>
       </property>
      </widget>
@@ -60,7 +60,7 @@
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>100</height>
+        <height>50</height>
        </size>
       </property>
      </widget>
@@ -70,7 +70,7 @@
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>100</height>
+        <height>50</height>
        </size>
       </property>
      </widget>
@@ -80,7 +80,17 @@
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>100</height>
+        <height>50</height>
+       </size>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QChartView" name="durPcmChartView6" native="true">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>50</height>
        </size>
       </property>
      </widget>

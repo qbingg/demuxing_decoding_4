@@ -236,6 +236,18 @@ void MainWindow::on_pushButton_clicked()
     durAxisY5->setRange(-32768, 32767); // 16位有符号整数范围
     initPcmChartView(durWaveSeries5,durAxisX5,durAxisY5,ui->durPcmChartView5);
     durAxisX5->setLabelsVisible(true);//单独开启durAxisX的刻度
+    //2、分块峰值降采样法（等间隔法取区间最大值 + 最小值）
+    QLineSeries *durWaveSeries6 = new QLineSeries();
+    durWaveSeries6->setName("音频波形\"播放时间-10s\"：分块峰值降采样法（等间隔法取区间最大值 + 最小值）");
+    durWaveSeries6->setPen(QPen(QColor(0, 180, 255), 1)); // 浅蓝色线条
+    QValueAxis *durAxisX6 = new QValueAxis();
+    durAxisX6->setTitleText("时间 (s)");
+    durAxisX6->setRange(0, (playerCtx->audio_stream->duration * av_q2d(playerCtx->audio_stream->time_base))); // 时长 0~duration(音频流)，注意要考虑时间基
+    QValueAxis *durAxisY6 = new QValueAxis();
+    durAxisY6->setTitleText("采样值");
+    durAxisY6->setRange(-32768, 32767); // 16位有符号整数范围
+    initPcmChartView(durWaveSeries6,durAxisX6,durAxisY6,ui->durPcmChartView6);
+    durAxisX6->setLabelsVisible(true);//单独开启durAxisX的刻度
 
 
     connect(m_myAudioDecodeThread,&MyAudioDecodeThread::sendDequeuedPcmBytes,this,[=](QByteArray bytes){
@@ -476,6 +488,50 @@ void MainWindow::on_pushButton_clicked()
                 durWaveSeries5->append(points);//末尾追加，而不是清空替换
                 // durAxisX5->setMax(playerCtx->audio_clock);// 时长 0~播放时间
                 durAxisX5->setRange(playerCtx->audio_clock < 10 ? 0 : (playerCtx->audio_clock - 10),
+                                    playerCtx->audio_clock);
+            }
+            /* 2、分块峰值降采样法（等间隔法取区间最大值 + 最小值）
+             * 原理：把采样点分成若干等长的小区间（块），每个区间内计算采样值的最大值和最小值，用这两个点代表整个区间的波形范围。
+             * 音频波形显示的行业标准方案，Audacity、Adobe Audition、剪映等专业软件全部采用此方案。
+             */
+            {
+                const int tgtFrames = 1;//从totalFrames降至tgtFrames：1024->64->1
+                const int blockInterval = totalFrames / tgtFrames;//分块间隔
+                QList<QPointF> points;//==1*声道=2
+                points.reserve(tgtFrames * 2); // 每个区间两个点：分别是最大值和最小值
+                // 遍历每个block，一共有tgtFrames个分块
+                for (int block = 0; block < tgtFrames; ++block) {
+                    int startFrame = block * blockInterval;
+                    int endFrame = qMin(startFrame + blockInterval, totalFrames);
+
+                    // 遍历块内所有frame，找峰值
+                    qint16 maxVal = std::numeric_limits<qint16>::min();//-32768 获取 qint16 类型能表示的最小值。
+                    qint16 minVal = std::numeric_limits<qint16>::max();// 32767 获取 qint16 类型能表示的最大值。
+                    for (int frameIndex = startFrame; frameIndex < endFrame; ++frameIndex) {
+                        const int sampleIndex = frameIndex * channels;
+                        qint16 sampleDataL = sampleData[sampleIndex]; // 左声道
+                        maxVal = qMax(maxVal, sampleDataL);
+                        minVal = qMin(minVal, sampleDataL);
+                        if(channels > 2){
+                            qint16 sampleDataR = sampleData[sampleIndex + 1]; // 右声道
+                            maxVal = qMax(maxVal, sampleDataR);
+                            minVal = qMin(minVal, sampleDataR);
+                        }
+                    }
+                    // //时间取block的中间值：startFrame->middleFrame->endFrame
+                    // qreal timeSec = ((startFrame + endFrame) / 2.0) / sampleRate;
+                    // // waveSeries->append(timeSec, maxVal);
+                    // // waveSeries->append(timeSec, minVal);
+                    // points.append(QPointF(timeSec, minVal));
+                    // points.append(QPointF(timeSec, maxVal));
+                    points.append(QPointF(playerCtx->audio_clock, minVal));//改用音频时钟
+                    points.append(QPointF(playerCtx->audio_clock, maxVal));//改用音频时钟
+                }
+                // // 一次性替换所有点，比循环append性能高很多
+                // waveSeries2->clear();
+                // waveSeries2->replace(points);
+                durWaveSeries6->append(points);//末尾追加，而不是清空替换
+                durAxisX6->setRange(playerCtx->audio_clock < 10 ? 0 : (playerCtx->audio_clock - 10),
                                     playerCtx->audio_clock);
             }
 
