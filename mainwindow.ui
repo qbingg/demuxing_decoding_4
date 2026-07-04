@@ -7,14 +7,14 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>900</height>
+    <height>600</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0,0,0,0,0,0,0">
+   <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0,0">
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="4,1,1">
       <item>
@@ -36,61 +36,11 @@
      </layout>
     </item>
     <item>
-     <widget class="QChartView" name="durPcmChartView" native="true">
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>50</height>
-       </size>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QChartView" name="durPcmChartView2" native="true">
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>50</height>
-       </size>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QChartView" name="durPcmChartView3" native="true">
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>50</height>
-       </size>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QChartView" name="durPcmChartView4" native="true">
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>50</height>
-       </size>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QChartView" name="durPcmChartView5" native="true">
-      <property name="minimumSize">
-       <size>
-        <width>0</width>
-        <height>50</height>
-       </size>
-      </property>
-     </widget>
-    </item>
-    <item>
      <widget class="QChartView" name="durPcmChartView6" native="true">
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>50</height>
+        <height>200</height>
        </size>
       </property>
      </widget>
