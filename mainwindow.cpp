@@ -237,9 +237,9 @@ void MainWindow::on_pushButton_clicked()
     barAxisY->setRange(-100, 0);
     initBarChartView(barSeries,barAxisX,barAxisY,ui->dBFSChartView);
     // 只用一个 QBarSet，包含左右声道两个值
-    QBarSet *set = new QBarSet("声道");
-    *set << -12.5 << -15.8;   // 第一个是 L，第二个是 R
-    barSeries->append(set);
+    QBarSet *dBFSSet = new QBarSet("峰值分贝（dBFS）");
+    *dBFSSet << -12.5 << -15.8;   // 第一个是 L，第二个是 R
+    barSeries->append(dBFSSet);
 
     connect(m_myAudioDecodeThread,&MyAudioDecodeThread::sendDequeuedPcmBytes,this,[=](QByteArray bytes){
         //涉及除法的就声明为double(qreal)
@@ -392,12 +392,17 @@ void MainWindow::on_pushButton_clicked()
                     }
                 }
                 //求峰值分贝（dBFS）
-                QBarSet *set = new QBarSet("峰值分贝（dBFS）");
-                // 20 * log10(峰值 / 最大可能值)
-                *set << (20.0f * log10f((float)maxValL / 32768.0f))
-                     << (20.0f * log10f((float)maxValR / 32768.0f));
-                barSeries->clear();
-                barSeries->append(set);
+                // QBarSet *set = new QBarSet("峰值分贝（dBFS）");
+                // // 20 * log10(峰值 / 最大可能值)
+                // *set << (20.0f * log10f((float)maxValL / 32768.0f))
+                //      << (20.0f * log10f((float)maxValR / 32768.0f));
+                // barSeries->clear();
+                // barSeries->append(set);
+                float dBFSL = (20.0f * log10f((float)maxValL / 32768.0f));
+                float dBFSR = (20.0f * log10f((float)maxValR / 32768.0f));
+                dBFSSet->replace(0, (dBFSL));
+                dBFSSet->replace(1, (dBFSR));
+
 
                 qCDebug(logAudioChartView2)<<"maxValL:"<<maxValL
                                             <<"\t maxValR:"<<maxValR
