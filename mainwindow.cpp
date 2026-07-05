@@ -268,7 +268,7 @@ void MainWindow::on_pushButton_clicked()
                     qint16 sampleDataL = sampleData[sampleIndex];
                     // waveSeries->append(timeSec, sampleDataL);
                     points.append(QPointF(timeSec, sampleDataL));
-                    if(channels > 2){
+                    if(channels == 2){
                         qint16 sampleDataR = sampleData[sampleIndex + 1];
                         // waveSeries->append(timeSec, sampleDataR);
                         points.append(QPointF(timeSec, sampleDataR));
@@ -299,7 +299,7 @@ void MainWindow::on_pushButton_clicked()
                         qint16 sampleDataL = sampleData[sampleIndex]; // 左声道
                         maxVal = qMax(maxVal, sampleDataL);
                         minVal = qMin(minVal, sampleDataL);
-                        if(channels > 2){
+                        if(channels == 2){
                             qint16 sampleDataR = sampleData[sampleIndex + 1]; // 右声道
                             maxVal = qMax(maxVal, sampleDataR);
                             minVal = qMin(minVal, sampleDataR);
@@ -343,7 +343,7 @@ void MainWindow::on_pushButton_clicked()
                         qint16 sampleDataL = sampleData[sampleIndex]; // 左声道
                         maxVal = qMax(maxVal, sampleDataL);
                         minVal = qMin(minVal, sampleDataL);
-                        if(channels > 2){
+                        if(channels == 2){
                             qint16 sampleDataR = sampleData[sampleIndex + 1]; // 右声道
                             maxVal = qMax(maxVal, sampleDataR);
                             minVal = qMin(minVal, sampleDataR);
@@ -385,9 +385,8 @@ void MainWindow::on_pushButton_clicked()
                         const int sampleIndex = frameIndex * channels;
                         qint16 sampleDataL = sampleData[sampleIndex]; // 左声道
                         maxValL = qMax(maxValL, sampleDataL);
-                        if(channels > 2){
+                        if(channels == 2){
                             qint16 sampleDataR = sampleData[sampleIndex + 1]; // 右声道
-                            qCDebug(logAudioChartView2)<<"sampleData[sampleIndex + 1]:"<<sampleData[sampleIndex + 1];
                             maxValR = qMax(maxValR, sampleDataR);
                         }
                     }
