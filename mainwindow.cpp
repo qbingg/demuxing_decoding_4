@@ -447,5 +447,25 @@ void MainWindow::on_pushButton_clicked()
     m_demuxThread->start();
     m_myVideoDecodeThread->start();
     m_myAudioDecodeThread->start();
+
+    QTimer *durPcmTimer = new QTimer(this);
+    connect(durPcmTimer,&QTimer::timeout,this,[=]{
+        if(playerCtx->audio_clock>10){
+            //推荐做法：因为你的点是按时间递增 append 的，所以只需要从头删掉 x < audio_clock - 10 的点。
+            int removeCount = 0;
+            // for (QPointF p : durWaveSeries6->points()) {
+            for (const QPointF &p : durWaveSeries6->points()) {//const QPointF &p：不会发生拷贝，减少开销
+                if(p.x() < (playerCtx->audio_clock - 10)){
+                    removeCount++;
+                }else{
+                    break;//因为点是递增的，遇到第一个还在窗口内的点就可以停止，不需要遍历全部点。
+                }
+            }
+            if (removeCount > 0) {
+                durWaveSeries6->removePoints(0, removeCount);//按时间递增，所以清理起始点index=0，Qt不会保留原索引，剩余点会重新排列成连续索引。
+            }
+        }
+    });
+    durPcmTimer->start(1000);//1秒清理一次
 }
 

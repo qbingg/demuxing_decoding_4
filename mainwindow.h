@@ -33,6 +33,7 @@ extern "C"{
 #include <QBarSeries>
 #include <QBarSet>
 #include <QBarCategoryAxis>
+#include <QTimer>
 
 #include <QLoggingCategory>
 Q_DECLARE_LOGGING_CATEGORY(logAudioChartView) // 声明
