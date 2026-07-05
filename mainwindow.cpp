@@ -234,10 +234,10 @@ void MainWindow::on_pushButton_clicked()
     // Y 轴不变
     QValueAxis *barAxisY = new QValueAxis();
     barAxisY->setTitleText("dBFS");
-    barAxisY->setRange(-100, 0);
+    barAxisY->setRange(-100 + 100, 0 + 100);//+100偏移量，因为柱状图是从0开始的，我希望是从-100开始，但是似乎没有直接实现方法
     initBarChartView(barSeries,barAxisX,barAxisY,ui->dBFSChartView);
     // 只用一个 QBarSet，包含左右声道两个值
-    QBarSet *dBFSSet = new QBarSet("峰值分贝（dBFS）");
+    QBarSet *dBFSSet = new QBarSet("峰值分贝(dBFS)+100偏移");
     *dBFSSet << -12.5 << -15.8;   // 第一个是 L，第二个是 R
     barSeries->append(dBFSSet);
 
@@ -400,8 +400,8 @@ void MainWindow::on_pushButton_clicked()
                 // barSeries->append(set);
                 float dBFSL = (20.0f * log10f((float)maxValL / 32768.0f));
                 float dBFSR = (20.0f * log10f((float)maxValR / 32768.0f));
-                dBFSSet->replace(0, (dBFSL));
-                dBFSSet->replace(1, (dBFSR));
+                dBFSSet->replace(0, (dBFSL +100));//+100偏移量，因为柱状图是从0开始的，我希望是从-100开始，但是似乎没有直接实现方法
+                dBFSSet->replace(1, (dBFSR +100));//+100偏移量，因为柱状图是从0开始的，我希望是从-100开始，但是似乎没有直接实现方法
 
 
                 qCDebug(logAudioChartView2)<<"maxValL:"<<maxValL
