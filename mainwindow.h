@@ -30,6 +30,9 @@ extern "C"{
 #include <QChartView>
 #include <QPainter>
 #include <QGraphicsLayout>
+#include <QBarSeries>
+#include <QBarSet>
+#include <QBarCategoryAxis>
 
 #include <QLoggingCategory>
 Q_DECLARE_LOGGING_CATEGORY(logAudioChartView) // 声明
@@ -94,6 +97,11 @@ public:
                           QValueAxis *axisX,
                           QValueAxis *axisY,
                           QChartView *pcmChartView);
+
+    void initBarChartView(QBarSeries *barSeries,
+                          QBarCategoryAxis *axisX,
+                          QValueAxis *axisY,
+                          QChartView *barChartView);
 
 protected:
     void dragEnterEvent(QDragEnterEvent *event);

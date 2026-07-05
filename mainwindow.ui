@@ -16,7 +16,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout" stretch="1,0,0">
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="4,1,1">
+     <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="4,1,1,1">
       <item>
        <widget class="MyDisplayImgWidget" name="widget" native="true"/>
       </item>
@@ -32,6 +32,9 @@
       </item>
       <item>
        <widget class="QChartView" name="pcmChartView2" native="true"/>
+      </item>
+      <item>
+       <widget class="QChartView" name="dBFSChartView" native="true"/>
       </item>
      </layout>
     </item>

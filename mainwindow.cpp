@@ -54,6 +54,42 @@ void MainWindow::initPcmChartView(QLineSeries *waveSeries, QValueAxis *axisX, QV
     // axisY->setGridLineVisible(false);
 }
 
+void MainWindow::initBarChartView(QBarSeries *barSeries, QBarCategoryAxis *axisX, QValueAxis *axisY, QChartView *barChartView)
+{
+    if(!barSeries || !axisX || !axisY|| !barChartView)
+        return;
+
+    QChart *chart = new QChart();
+    chart->addSeries(barSeries);
+    chart->addAxis(axisX, Qt::AlignBottom);
+    chart->addAxis(axisY, Qt::AlignLeft);
+
+    //波形数据使用这两个坐标轴映射
+    barSeries->attachAxis(axisX);
+    barSeries->attachAxis(axisY);
+
+    // 显示到UI的QChartView控件（对象名：chartView）
+    barChartView->setChart(chart);
+    barChartView->setRenderHint(QPainter::Antialiasing); // 抗锯齿
+
+    /*为bar图表显示进行布局优化*/
+    chart->setTitle("");//去掉标题
+    // chart->legend()->hide();//隐藏图表用于解释颜色和系列名称的图例框
+    chart->layout()->setContentsMargins(0, 0, 0, 0);//去掉外层layout的margin间隔
+    chart->setMargins(QMargins(0, 0, 0, 0));//去掉chart内层的margin间隔
+    chart->setBackgroundRoundness(0);//去掉圆角（Qt文档：此属性表示图表背景四角处圆角的直径。）
+    chart->setAnimationOptions(QChart::NoAnimation); // 静态图关闭动画
+    // 去掉坐标轴标题
+    axisX->setTitleVisible(false);
+    axisY->setTitleVisible(false);
+    // // 去掉坐标轴刻度
+    // axisX->setLabelsVisible(false);
+    // axisY->setLabelsVisible(false);
+    // // 去掉坐标轴网格
+    // axisX->setGridLineVisible(false);
+    // axisY->setGridLineVisible(false);
+}
+
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
 {
     if (event->mimeData()->hasUrls())
@@ -187,7 +223,23 @@ void MainWindow::on_pushButton_clicked()
     durAxisY6->setRange(-32768, 32767); // 16位有符号整数范围
     initPcmChartView(durWaveSeries6,durAxisX6,durAxisY6,ui->durPcmChartView6);
     durAxisX6->setLabelsVisible(true);//单独开启durAxisX的刻度
-
+    /*dBFS图*/
+    // 创建柱状序列
+    QBarSeries *barSeries = new QBarSeries();
+    barSeries->setName("dBFS图");
+    // X 轴使用类别轴
+    QBarCategoryAxis *barAxisX = new QBarCategoryAxis();
+    barAxisX->append("L");
+    barAxisX->append("R");
+    // Y 轴不变
+    QValueAxis *barAxisY = new QValueAxis();
+    barAxisY->setTitleText("dBFS");
+    barAxisY->setRange(-100, 0);
+    initBarChartView(barSeries,barAxisX,barAxisY,ui->dBFSChartView);
+    // 只用一个 QBarSet，包含左右声道两个值
+    QBarSet *set = new QBarSet("声道");
+    *set << -12.5 << -15.8;   // 第一个是 L，第二个是 R
+    barSeries->append(set);
 
     connect(m_myAudioDecodeThread,&MyAudioDecodeThread::sendDequeuedPcmBytes,this,[=](QByteArray bytes){
         //涉及除法的就声明为double(qreal)
@@ -313,7 +365,46 @@ void MainWindow::on_pushButton_clicked()
                 durAxisX6->setRange(playerCtx->audio_clock < 10 ? 0 : (playerCtx->audio_clock - 10),
                                     playerCtx->audio_clock);
             }
+            /*dBFS图*/
+            /* 2、分块峰值降采样法（等间隔法取区间最大值 + 最小值）
+             * 原理：把采样点分成若干等长的小区间（块），每个区间内计算采样值的最大值和最小值，用这两个点代表整个区间的波形范围。
+             * 音频波形显示的行业标准方案，Audacity、Adobe Audition、剪映等专业软件全部采用此方案。
+             */
+            {
+                const int tgtFrames = 1;//从totalFrames降至tgtFrames：1024->64 //==1*声道=2
+                const int blockInterval = totalFrames / tgtFrames;//分块间隔
+                qint16 maxValL = std::numeric_limits<qint16>::min();//-32768 获取 qint16 类型能表示的最小值。
+                qint16 maxValR = std::numeric_limits<qint16>::min();//-32768 获取 qint16 类型能表示的最小值。
+                // 遍历每个block，一共有tgtFrames个分块
+                for (int block = 0; block < tgtFrames; ++block) {
+                    int startFrame = block * blockInterval;
+                    int endFrame = qMin(startFrame + blockInterval, totalFrames);
 
+                    // 遍历块内所有frame，找峰值
+                    for (int frameIndex = startFrame; frameIndex < endFrame; ++frameIndex) {
+                        const int sampleIndex = frameIndex * channels;
+                        qint16 sampleDataL = sampleData[sampleIndex]; // 左声道
+                        maxValL = qMax(maxValL, sampleDataL);
+                        if(channels > 2){
+                            qint16 sampleDataR = sampleData[sampleIndex + 1]; // 右声道
+                            qCDebug(logAudioChartView2)<<"sampleData[sampleIndex + 1]:"<<sampleData[sampleIndex + 1];
+                            maxValR = qMax(maxValR, sampleDataR);
+                        }
+                    }
+                }
+                //求峰值分贝（dBFS）
+                QBarSet *set = new QBarSet("峰值分贝（dBFS）");
+                // 20 * log10(峰值 / 最大可能值)
+                *set << (20.0f * log10f((float)maxValL / 32768.0f))
+                     << (20.0f * log10f((float)maxValR / 32768.0f));
+                barSeries->clear();
+                barSeries->append(set);
+
+                qCDebug(logAudioChartView2)<<"maxValL:"<<maxValL
+                                            <<"\t maxValR:"<<maxValR
+                                            <<"\t dbL ="<<(20.0f * log10f((float)maxValL / 32768.0f))
+                                            <<"\t dbR ="<<(20.0f * log10f((float)maxValR / 32768.0f));
+            }
 
         }
     },Qt::QueuedConnection);//确保不是子线程操作GUI线程
