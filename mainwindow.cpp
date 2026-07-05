@@ -386,90 +386,60 @@ void MainWindow::on_pushButton_clicked()
             /**
              * 音量图*/
             /*dBFS图*/
-            /* 2、分块峰值降采样法（等间隔法取区间最大值 + 最小值）
-             * 原理：把采样点分成若干等长的小区间（块），每个区间内计算采样值的最大值和最小值，用这两个点代表整个区间的波形范围。
-             * 音频波形显示的行业标准方案，Audacity、Adobe Audition、剪映等专业软件全部采用此方案。
-             */
             {
-                const int tgtFrames = 1;//从totalFrames降至tgtFrames：1024->64 //==1*声道=2
-                const int blockInterval = totalFrames / tgtFrames;//分块间隔
-                qint16 maxValL = std::numeric_limits<qint16>::min();//-32768 获取 qint16 类型能表示的最小值。
-                qint16 maxValR = std::numeric_limits<qint16>::min();//-32768 获取 qint16 类型能表示的最小值。
-                // 遍历每个block，一共有tgtFrames个分块
-                for (int block = 0; block < tgtFrames; ++block) {
-                    int startFrame = block * blockInterval;
-                    int endFrame = qMin(startFrame + blockInterval, totalFrames);
-
-                    // 遍历块内所有frame，找峰值
-                    for (int frameIndex = startFrame; frameIndex < endFrame; ++frameIndex) {
-                        const int sampleIndex = frameIndex * channels;
-                        qint16 sampleDataL = sampleData[sampleIndex]; // 左声道
-                        maxValL = qMax(maxValL, abs(sampleDataL));
-                        if(channels == 2){
-                            qint16 sampleDataR = sampleData[sampleIndex + 1]; // 右声道
-                            maxValR = qMax(maxValR, abs(sampleDataR));
-                        }
+                //声道振幅峰值，0~|-32768|，超出qint16的(-32768,32767)的范围，改用int(qint32)
+                qint32 peakL = 0;
+                qint32 peakR = 0;
+                for (int frameIndex = 0; frameIndex < totalFrames; ++frameIndex) {
+                    const int sampleIndex = frameIndex * channels;
+                    qint16 sampleDataL = sampleData[sampleIndex]; // 左声道
+                    peakL = qMax(peakL, abs(sampleDataL));//取sample绝对值
+                    if(channels == 2){
+                        qint16 sampleDataR = sampleData[sampleIndex + 1]; // 右声道
+                        peakR = qMax(peakR, abs(sampleDataR));
                     }
                 }
                 //求峰值分贝（dBFS）
-                // QBarSet *set = new QBarSet("峰值分贝（dBFS）");
-                // // 20 * log10(峰值 / 最大可能值)
-                // *set << (20.0f * log10f((float)maxValL / 32768.0f))
-                //      << (20.0f * log10f((float)maxValR / 32768.0f));
-                // barSeries->clear();
-                // barSeries->append(set);
-                float dBFSL = (20.0f * log10f((float)maxValL / 32768.0f));
-                float dBFSR = (20.0f * log10f((float)maxValR / 32768.0f));
+                // 20 * log10(峰值 / 最大可能值)
+                float dBFSL = (20.0f * log10f(peakL / 32768.0f));
+                float dBFSR = (20.0f * log10f(peakR / 32768.0f));
                 dBFSSet->replace(0, (dBFSL +100));//+100偏移量，因为柱状图是从0开始的，我希望是从-100开始，但是似乎没有直接实现方法
                 dBFSSet->replace(1, (dBFSR +100));//+100偏移量，因为柱状图是从0开始的，我希望是从-100开始，但是似乎没有直接实现方法
-
-
-                // qCDebug(logAudioChartView2)<<"maxValL:"<<maxValL
-                //                             <<"\t maxValR:"<<maxValR
-                //                             <<"\t dbL ="<<(20.0f * log10f((float)maxValL / 32768.0f))
-                //                             <<"\t dbR ="<<(20.0f * log10f((float)maxValR / 32768.0f));
+                qCDebug(logAudioChartView2)<<"peakL:"<<peakL
+                                            <<"\t peakR:"<<peakR
+                                            <<"\t dBFSL ="<<dBFSL
+                                            <<"\t dBFSR ="<<dBFSR;
             }
             /*RMS图*/
-            /* 2、分块峰值降采样法（等间隔法取区间最大值 + 最小值）
-             * 原理：把采样点分成若干等长的小区间（块），每个区间内计算采样值的最大值和最小值，用这两个点代表整个区间的波形范围。
-             * 音频波形显示的行业标准方案，Audacity、Adobe Audition、剪映等专业软件全部采用此方案。
-             */
             {
-                const int tgtFrames = 1;//从totalFrames降至tgtFrames：1024->64 //==1*声道=2
-                const int blockInterval = totalFrames / tgtFrames;//分块间隔
-                qint64 sumOfSquaresL = 0;
-                qint64 sumOfSquaresR = 0;
-                // 遍历每个block，一共有tgtFrames个分块
-                for (int block = 0; block < tgtFrames; ++block) {
-                    int startFrame = block * blockInterval;
-                    int endFrame = qMin(startFrame + blockInterval, totalFrames);
-
-                    // 遍历块内所有frame，找峰值
-                    for (int frameIndex = startFrame; frameIndex < endFrame; ++frameIndex) {
-                        const int sampleIndex = frameIndex * channels;
-                        qint16 sampleDataL = sampleData[sampleIndex]; // 左声道
-                        sumOfSquaresL += (sampleDataL * sampleDataL);
-                        if(channels == 2){
-                            qint16 sampleDataR = sampleData[sampleIndex + 1]; // 右声道
-                            sumOfSquaresR += (sampleDataR * sampleDataR);
-                        }
+                //求振幅的平方和，最大值：1024采样点 * (32768振幅)^2
+                //uint32都不够
+                quint64 sumOfSquaresL = 0;
+                quint64 sumOfSquaresR = 0;
+                for (int frameIndex = 0; frameIndex < totalFrames; ++frameIndex) {
+                    const int sampleIndex = frameIndex * channels;
+                    quint64 sampleDataL = abs(sampleData[sampleIndex]); // 左声道 //取绝对值
+                    sumOfSquaresL += (sampleDataL * sampleDataL);//平方求和
+                    if(channels == 2){
+                        quint64 sampleDataR = abs(sampleData[sampleIndex + 1]); // 右声道
+                        sumOfSquaresR += (sampleDataR * sampleDataR);
                     }
                 }
-                //求峰值分贝（RMS）
-                double RMSL = sqrt(abs(sumOfSquaresL) / totalFrames);
-                double RMSR = sqrt(abs(sumOfSquaresR) / totalFrames);
-
-                float dBRMSL = (20.0f * log10f((float)RMSL / 32768.0f));
-                float dBRMSR = (20.0f * log10f((float)RMSR / 32768.0f));
-
+                //求均方根RMS
+                double RMSL = sqrt(sumOfSquaresL / static_cast<double>(totalFrames));
+                double RMSR = sqrt(sumOfSquaresR / static_cast<double>(totalFrames));
+                //求RMS分贝（dBRMS）
+                // 20 * log10(均方根 / 最大可能值)
+                double dBRMSL = (20.0 * log10(RMSL / 32768.0));
+                double dBRMSR = (20.0 * log10(RMSR / 32768.0));
                 RMSSet->replace(0, (dBRMSL +100));//+100偏移量，因为柱状图是从0开始的，我希望是从-100开始，但是似乎没有直接实现方法
                 RMSSet->replace(1, (dBRMSR +100));//+100偏移量，因为柱状图是从0开始的，我希望是从-100开始，但是似乎没有直接实现方法
-
                 qCDebug(logAudioChartView2)<<"sumOfSquaresL:"<<sumOfSquaresL
                                             <<"\t sumOfSquaresR:"<<sumOfSquaresR
                                             <<"\t RMSL ="<<RMSL
-                                            <<"\t RMSR ="<<RMSR;
-
+                                            <<"\t RMSR ="<<RMSR
+                                            <<"\t dBRMSL ="<<dBRMSL
+                                            <<"\t dBRMSR ="<<dBRMSR;
             }
         }
     },Qt::QueuedConnection);//确保不是子线程操作GUI线程
