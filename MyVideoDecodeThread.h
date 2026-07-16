@@ -37,7 +37,12 @@ public:
     int decode_packet(AVCodecContext *dec, const AVPacket *pkt ,AVFrame *frame);
 
 signals:
-    void sendCurrentFrame(QImage);
+    void sendYuv420pFrame(const QByteArray &yPlane,
+                          const QByteArray &uPlane,
+                          const QByteArray &vPlane,
+                          int width,
+                          int height);
+
 
 private:
     FFmpegPlayerCtx *is = nullptr;
@@ -97,6 +102,57 @@ private:
 
         return 0;
     }
+
+    int frame_to_yuv420planes(AVFrame *src,
+                              QByteArray &dst_yPlane,
+                              QByteArray &dst_uPlane,
+                              QByteArray &dst_vPlane)
+    {
+        const int width = src->width;
+        const int height = src->height;
+        const int chromaWidth = (width + 1) / 2;
+        const int chromaHeight = (height + 1) / 2;
+
+        if(width <= 0 || height <= 0){
+            qDebug()<<"frame_to_yuv420planes：frame的宽高无效，"
+                     <<"width:"<<width
+                     <<"height"<<height;
+            return -1;
+        }
+
+        //注意memcpy前，一定要给空的QByteArray分配空间
+        dst_yPlane.resize(width * height);
+        dst_uPlane.resize(chromaWidth * chromaHeight);
+        dst_vPlane.resize(chromaWidth * chromaHeight);
+
+        //三平面的for循环参考自：手册19：MyMux.cpp（OpenCV图片合成视频）
+        //拷贝对象反转，y、u、v指针不是opencv一样连续的
+
+        // y
+        char *y_ptr = dst_yPlane.data();
+        for (int y = 0; y < height; ++y) {
+            memcpy(y_ptr + y * width,
+                   src->data[0] + y * src->linesize[0],
+                   width);
+        }
+        // u
+        char* u_ptr = dst_uPlane.data();
+        for (int u = 0; u < chromaHeight; ++u) {
+            memcpy(u_ptr + u * chromaWidth,
+                   src->data[1] + u * src->linesize[1],
+                   chromaWidth);
+        }
+        // v
+        char* v_ptr = dst_vPlane.data();
+        for (int v = 0; v < chromaHeight; ++v) {
+            memcpy(v_ptr + v * chromaWidth,
+                   src->data[2] + v * src->linesize[2],
+                   chromaWidth);
+        }
+
+        return 0;
+    }
+
 
     // 开始计时
     std::chrono::steady_clock::time_point m_start;

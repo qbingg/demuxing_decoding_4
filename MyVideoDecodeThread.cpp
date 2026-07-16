@@ -55,8 +55,12 @@ int MyVideoDecodeThread::decode_packet(AVCodecContext *dec, const AVPacket *pkt,
                  <<"is->width:"<<is->video_dec_ctx->width
                  <<"frame->linesize[0]"<<frame->linesize[0];
 
-        QImage rgb;
-        yuv_to_rgb(frame,rgb);
+        QByteArray yPlane, uPlane, vPlane;
+        frame_to_yuv420planes(frame, yPlane, uPlane, vPlane);
+        emit sendYuv420pFrame(yPlane, uPlane, vPlane, frame->width, frame->height);
+
+        // QImage rgb;
+        // yuv_to_rgb(frame,rgb);
         {
             // pts概念：呈现时间戳Presentation timestamp
             // 时间换算：duration = pts * 时间基time_base
@@ -88,7 +92,7 @@ int MyVideoDecodeThread::decode_packet(AVCodecContext *dec, const AVPacket *pkt,
             if(video_clock > audio_clock)
                 msleep(sleep_dur);
         }
-        emit sendCurrentFrame(rgb.copy());
+        // emit sendCurrentFrame(rgb.copy());
 
         av_frame_unref(frame);
 

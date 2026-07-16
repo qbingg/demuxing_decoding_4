@@ -104,9 +104,12 @@ void MainWindow::on_pushButton_clicked()
     // create video decode thread
     m_myVideoDecodeThread = new MyVideoDecodeThread;
     m_myVideoDecodeThread->setPlayerCtx(playerCtx);
-    connect(m_myVideoDecodeThread,&MyVideoDecodeThread::sendCurrentFrame,this,[=](QImage qimg){
-        ui->widget->setPixmap(QPixmap::fromImage(qimg));
-    });
+    connect(m_myVideoDecodeThread,
+            &MyVideoDecodeThread::sendYuv420pFrame,
+            ui->widget,
+            &MyYUV420POpenGLWidget::setYuv420pFrame,
+            Qt::QueuedConnection);
+
 
     m_myAudioDecodeThread = new MyAudioDecodeThread;
     m_myAudioDecodeThread->setPlayerCtx(playerCtx);
