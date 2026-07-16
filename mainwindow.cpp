@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+Q_LOGGING_CATEGORY(logPause, "player.pause") // 定义，名称为 ""
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -8,6 +10,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
 
     setAcceptDrops(true);// 开启对整个窗口的拖放操作的支持
+
+    ui->btnPause->setCheckable(true);
 }
 
 MainWindow::~MainWindow()
@@ -119,3 +123,23 @@ void MainWindow::on_pushButton_clicked()
     m_myAudioDecodeThread->start();
 }
 
+void MainWindow::on_btnPause_clicked(bool checked)
+{
+    if(!playerCtx){
+        ui->btnPause->setChecked(false);
+        return;
+    }
+
+    if(checked){
+        ui->btnPause->setText("继续");
+
+        playerCtx->pause = true;
+
+    }else{
+        ui->btnPause->setText("暂停");
+
+        playerCtx->pause = false;
+    }
+
+    qCDebug(logPause) << "playerCtx->pause: " << playerCtx->pause;
+}

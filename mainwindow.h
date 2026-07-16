@@ -24,6 +24,8 @@ extern "C"{
 #include "MyPacketQueue.h"
 #include "MyVideoDecodeThread.h"
 
+#include <QLoggingCategory>
+Q_DECLARE_LOGGING_CATEGORY(logPause) // 声明
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -68,6 +70,8 @@ struct FFmpegPlayerCtx {
 
     std::atomic<double> audio_clock = 0;//使用出队PCM Byte clock作为音频时钟
 
+    std::atomic<bool> pause = false;
+
     // int width, height;我直接使用了AVFrame解码后自带的宽高，也就不需要video_dec_ctx->width;
     // enum AVPixelFormat pix_fmt;在demux初始化，在yuv转rgb用到，但是这个项目就是yuv420P转rgb，不考虑其他格式的话，就不需要这个变量
 };
@@ -85,6 +89,8 @@ protected:
     void dropEvent(QDropEvent *event);
 private slots:
     void on_pushButton_clicked();
+
+    void on_btnPause_clicked(bool checked);
 
 private:
     Ui::MainWindow *ui;
