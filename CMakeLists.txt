@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 project(demuxing_decoding_4 LANGUAGES CXX)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets OpenGL OpenGLWidgets)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Core Widgets Charts OpenGL OpenGLWidgets)
 
 qt_standard_project_setup()
 
@@ -26,6 +26,7 @@ target_link_libraries(demuxing_decoding_4
         Qt::Widgets
         Qt::OpenGL
         Qt::OpenGLWidgets
+        Qt::Charts
 )
 
 include(GNUInstallDirs)

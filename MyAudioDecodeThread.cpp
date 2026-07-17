@@ -115,6 +115,9 @@ void MyAudioDecodeThread::getAudioData(unsigned char *stream, int len)
 
     is->audio_buf_q.dequeue(stream,len,m_stop);
 
+    QByteArray pcm(reinterpret_cast<const char*>(stream), len);
+    emit sendDequeuedPcmBytes(pcm);
+
     {
         // 累计出队Byte
         uint64_t bytes = is->total_dequeued_pcm_bytes+= len;

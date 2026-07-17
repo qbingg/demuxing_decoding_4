@@ -18,6 +18,11 @@ extern "C"{
 #include <QMessageBox>
 #include <QDragEnterEvent>
 #include <QMimeData>
+#include <QChart>
+#include <QLineSeries>
+#include <QValueAxis>
+#include <QChartView>
+#include <QGraphicsLayout>
 #include "MyAudioBufQueue.h"
 #include "MyAudioDecodeThread.h"
 #include "MyDemuxThread.h"
@@ -84,9 +89,12 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+    void initDurPcmChartView();
+
 protected:
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
+    void resizeEvent(QResizeEvent *event);
 private slots:
     void on_pushButton_clicked();
 
@@ -102,5 +110,12 @@ private:
     MyVideoDecodeThread *m_myVideoDecodeThread = nullptr;
 
     MyAudioDecodeThread *m_myAudioDecodeThread = nullptr;
+
+    //进度条
+    QLineSeries *m_durWaveSeries = nullptr;
+    QValueAxis *m_durAxisX = nullptr;
+    QValueAxis *m_durAxisY = nullptr;
+    QList<QPointF> m_durPoints;//sdl每次取水的min/max点：1024->2（降采样）
+    QList<QPointF> m_durTgtPoints;//依据chartView宽度，按像素数量从points取点
 };
 #endif // MAINWINDOW_H
