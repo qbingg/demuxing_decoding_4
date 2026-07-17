@@ -231,7 +231,72 @@ void MainWindow::on_pushButton_clicked()
         }
     },Qt::QueuedConnection);//确保不是子线程操作GUI线程
     connect(&m_durTimer,&QTimer::timeout,this,[=]{
-        m_durWaveSeries->replace(m_durPoints);
+        // m_durWaveSeries->replace(m_durPoints);
+
+        const int pixels = ui->durPcmChartView->width();
+
+        //对m_durPoints取pixels个min/max点，应该是等间隔还是再次使用分块峰值降采样法？
+        if (m_durPoints.size() <= pixels) {
+            m_durWaveSeries->replace(m_durPoints);
+            return;
+        }
+        qCDebug(logPause)<<"m_durPoints.size() > pixels"<<m_durPoints.size()<<"\t"<<ui->durPcmChartView->width();
+
+        //m_durTgtPoints//QList<QPointF>
+        // const int tgtBlocks = pixels;
+        // const int blockInterval = m_durPoints.size() / tgtBlocks;//分块间隔
+        // QList<QPointF> points;//==pixels*2
+        // points.reserve(tgtBlocks * 2); // 每个区间两个点：分别是最大值和最小值
+        // // 遍历每个block，一共有tgtFrames个分块
+        // for (int block = 0; block < tgtBlocks; ++block) {
+        //     int startPoint = block * blockInterval;
+        //     int endPoint = qMin(startPoint + blockInterval, m_durPoints.size());
+        //
+        //     // 遍历块内所有frame，找峰值
+        //     qint16 maxVal = std::numeric_limits<qint16>::min();//-32768 获取 qint16 类型能表示的最小值。
+        //     qint16 minVal = std::numeric_limits<qint16>::max();// 32767 获取 qint16 类型能表示的最大值。
+        //     QPointF maxPoint = QPointF(0, maxVal);
+        //     QPointF minPoint = QPointF(0, minVal);
+        //     for (int i = startPoint; i < endPoint; ++i) {
+        //         if (maxPoint.y() < m_durPoints[i].y())
+        //             maxPoint = m_durPoints[i];
+        //         // minPoint = qMin(minPoint,m_durPoints[i])
+        //         if (minPoint.y() > m_durPoints[i].y())
+        //             minPoint = m_durPoints[i];
+        //     }
+        //     points.append(maxPoint);
+        //     points.append(minPoint);
+        // }
+        const int tgtBlocks = pixels;
+        const int total = m_durPoints.size();
+
+        QList<QPointF> points;
+        points.reserve(tgtBlocks * 2);
+
+        for (int block = 0; block < tgtBlocks; ++block) {
+            int startPoint = block * total / tgtBlocks;
+            int endPoint = (block + 1) * total / tgtBlocks;
+
+            if (startPoint >= endPoint)
+                continue;
+
+            qreal maxVal = std::numeric_limits<qreal>::lowest();
+            qreal minVal = std::numeric_limits<qreal>::max();
+
+            for (int i = startPoint; i < endPoint; ++i) {
+                maxVal = qMax(maxVal, m_durPoints[i].y());
+                minVal = qMin(minVal, m_durPoints[i].y());
+            }
+
+            qreal x = (m_durPoints[startPoint].x() + m_durPoints[endPoint - 1].x()) / 2.0;
+
+            points.append(QPointF(x, minVal));
+            points.append(QPointF(x, maxVal));
+        }
+
+        m_durWaveSeries->replace(points);
+qCDebug(logPause)<<"m_durWaveSeries->replace(points)";//<<m_durPoints.size()<<"\t"<<ui->durPcmChartView->width();
+
     });
     m_durTimer.start(100);
 
