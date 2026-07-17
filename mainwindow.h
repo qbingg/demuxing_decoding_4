@@ -23,6 +23,7 @@ extern "C"{
 #include <QValueAxis>
 #include <QChartView>
 #include <QGraphicsLayout>
+#include <QTimer>
 #include "MyAudioBufQueue.h"
 #include "MyAudioDecodeThread.h"
 #include "MyDemuxThread.h"
@@ -117,5 +118,6 @@ private:
     QValueAxis *m_durAxisY = nullptr;
     QList<QPointF> m_durPoints;//sdl每次取水的min/max点：1024->2（降采样）
     QList<QPointF> m_durTgtPoints;//依据chartView宽度，按像素数量从points取点
+    QTimer m_durTimer;// = nullptr;
 };
 #endif // MAINWINDOW_H

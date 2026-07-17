@@ -225,10 +225,15 @@ void MainWindow::on_pushButton_clicked()
                 // // 一次性替换所有点，比循环append性能高很多
                 // waveSeries2->clear();
                 // waveSeries2->replace(points);
-                m_durWaveSeries->append(points);//末尾追加，而不是清空替换
+                // m_durWaveSeries->append(points);//末尾追加，而不是清空替换
+                m_durPoints.append(points);
             }
         }
     },Qt::QueuedConnection);//确保不是子线程操作GUI线程
+    connect(&m_durTimer,&QTimer::timeout,this,[=]{
+        m_durWaveSeries->replace(m_durPoints);
+    });
+    m_durTimer.start(100);
 
     m_demuxThread->start();
     m_myVideoDecodeThread->start();
