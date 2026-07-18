@@ -392,41 +392,34 @@ int MainWindow::intervalDownSampling(const QList<QPointF> &srcPointList,
                                      QList<QPointF> &dstPointList,
                                      const int dstBarInterval)
 {
-    if (dstBarInterval == 0) {
+    if (dstBarInterval <= 0) {
         dstPointList = srcPointList;
-        qCDebug(logPause) << "src.size太小了，除数为0";
-        return -1;
+        qDebug() << "无效的dstBarInterval：" << dstBarInterval << "不进行等间隔降采样。";
+        return 0;
     }
 
     //从srcBar里按BarInterval的大小，分成若干块，在从块里峰值降采样得到dstBar
 
-    const int dstPointInterval = dstBarInterval * 2;
-
-    const int totalPoints = srcPointList.size(); //总点数
-    const int blocks = (totalPoints / dstPointInterval)+1;
-    //分块
+    const int totalBars = srcPointList.size() / 2;
+    const int blocks = (totalBars + dstBarInterval - 1) / dstBarInterval;//如果想向上取整，不能简单blocks整除 +1。
+    //按 bar 分块
     for (int block = 0; block < blocks; ++block) {
-        int startPoint = block * totalPoints / blocks;
-        int endPoint = (block + 1) * totalPoints / blocks;
-
-        if (startPoint >= endPoint)
-            continue;
+        int startBar = block * totalBars / blocks;
+        int endBar = (block + 1) * totalBars / blocks;
 
         qreal maxVal = std::numeric_limits<qreal>::lowest();
         qreal minVal = std::numeric_limits<qreal>::max();
-        for (int i = startPoint; i < endPoint; ++i) {
-            maxVal = qMax(maxVal, srcPointList[i].y());
-            minVal = qMin(minVal, srcPointList[i].y());
+        for (int bar = startBar; bar < endBar; ++bar) {
+            const QPointF& p0 = srcPointList[bar * 2];
+            const QPointF& p1 = srcPointList[bar * 2 + 1];
+            maxVal = qMax(maxVal, qMax(p0.y(), p1.y()));
+            minVal = qMin(minVal, qMin(p0.y(), p1.y()));
         }
         //时间取块的中间值
-        qreal x = (srcPointList[startPoint].x() + srcPointList[endPoint - 1].x()) / 2.0;
-
-        dstPointList.append(QPointF(x, minVal));
+        qreal x = (srcPointList[startBar * 2].x() + srcPointList[(endBar - 1) * 2 + 1].x()) / 2.0;
         dstPointList.append(QPointF(x, maxVal));
+        dstPointList.append(QPointF(x, minVal));
     }
-
-
-
     return 0;
 }
 
@@ -442,11 +435,9 @@ int MainWindow::chartViewDownSampling(const QList<QPointF> &srcPointList,
     const int barInterval = totalCbBars / pixelBars;
     if (barInterval == 0) {
         dstPointList = srcPointList;
-        qCDebug(logPause) << "src.size太小了，除数为0";
-        return -1;
+        qCDebug(logPause) << "src.size太小了，除数为0，无需降采样";
+        return 0;
     }
 
-    intervalDownSampling(m_durPoints,dstPointList,barInterval);
-
-
+    intervalDownSampling(srcPointList,dstPointList,barInterval);
 }
