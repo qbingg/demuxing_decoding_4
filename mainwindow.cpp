@@ -318,31 +318,12 @@ void MainWindow::on_pushButton_clicked()
         //第二次采样间隔
         const int dspBarsInterval = totalCbBars / pixelBars;
 
-        //分块峰值降采样
-        const int tgtBarBlocks = pixelBars;//块数
-        const int totalPoints = m_durPoints.size(); //总点数
-        QList<QPointF> tgtBarPoints;
-        //分块
-        for (int block = 0; block < tgtBarBlocks; ++block) {
-            int startPoint = block * totalPoints / tgtBarBlocks;
-            int endPoint = (block + 1) * totalPoints / tgtBarBlocks;
+        QList<QPointF> pList;
+        // blockDownSampling(m_durPoints,pList,pixelBars);
+        // intervalDownSampling(m_durPoints,pList,dspBarsInterval);
+        chartViewDownSampling(m_durPoints,totalCbBars,pList,ui->durPcmChartView->width());
 
-            if (startPoint >= endPoint)
-                continue;
-
-            qreal maxVal = std::numeric_limits<qreal>::lowest();
-            qreal minVal = std::numeric_limits<qreal>::max();
-            for (int i = startPoint; i < endPoint; ++i) {
-                maxVal = qMax(maxVal, m_durPoints[i].y());
-                minVal = qMin(minVal, m_durPoints[i].y());
-            }
-            //时间取块的中间值
-            qreal x = (m_durPoints[startPoint].x() + m_durPoints[endPoint - 1].x()) / 2.0;
-
-            tgtBarPoints.append(QPointF(x, minVal));
-            tgtBarPoints.append(QPointF(x, maxVal));
-        }
-        m_durWaveSeries->replace(tgtBarPoints);
+        m_durWaveSeries->replace(pList);
 
     });
     m_durTimer.start(100);
@@ -371,4 +352,101 @@ void MainWindow::on_btnPause_clicked(bool checked)
     }
 
     qCDebug(logPause) << "playerCtx->pause: " << playerCtx->pause;
+}
+
+int MainWindow::blockDownSampling(const QList<QPointF> &srcPointList,
+                                  QList<QPointF> &dstPointList,
+                                  const int dstBars)
+{
+    //目标柱状图数量 dstBars
+    //目标输出点的数量（一个bar对应2个点min/max）
+    // const int dstPoints = dstBars * 2;
+
+    //分块峰值降采样
+    const int blocks = dstBars;//块数 ==  柱状图数
+    const int totalPoints = srcPointList.size(); //总点数
+    //分块
+    for (int block = 0; block < blocks; ++block) {
+        int startPoint = block * totalPoints / blocks;
+        int endPoint = (block + 1) * totalPoints / blocks;
+
+        if (startPoint >= endPoint)
+            continue;
+
+        qreal maxVal = std::numeric_limits<qreal>::lowest();
+        qreal minVal = std::numeric_limits<qreal>::max();
+        for (int i = startPoint; i < endPoint; ++i) {
+            maxVal = qMax(maxVal, srcPointList[i].y());
+            minVal = qMin(minVal, srcPointList[i].y());
+        }
+        //时间取块的中间值
+        qreal x = (srcPointList[startPoint].x() + srcPointList[endPoint - 1].x()) / 2.0;
+
+        dstPointList.append(QPointF(x, minVal));
+        dstPointList.append(QPointF(x, maxVal));
+    }
+    return 0;
+}
+
+int MainWindow::intervalDownSampling(const QList<QPointF> &srcPointList,
+                                     QList<QPointF> &dstPointList,
+                                     const int dstBarInterval)
+{
+    if (dstBarInterval == 0) {
+        dstPointList = srcPointList;
+        qCDebug(logPause) << "src.size太小了，除数为0";
+        return -1;
+    }
+
+    //从srcBar里按BarInterval的大小，分成若干块，在从块里峰值降采样得到dstBar
+
+    const int dstPointInterval = dstBarInterval * 2;
+
+    const int totalPoints = srcPointList.size(); //总点数
+    const int blocks = (totalPoints / dstPointInterval)+1;
+    //分块
+    for (int block = 0; block < blocks; ++block) {
+        int startPoint = block * totalPoints / blocks;
+        int endPoint = (block + 1) * totalPoints / blocks;
+
+        if (startPoint >= endPoint)
+            continue;
+
+        qreal maxVal = std::numeric_limits<qreal>::lowest();
+        qreal minVal = std::numeric_limits<qreal>::max();
+        for (int i = startPoint; i < endPoint; ++i) {
+            maxVal = qMax(maxVal, srcPointList[i].y());
+            minVal = qMin(minVal, srcPointList[i].y());
+        }
+        //时间取块的中间值
+        qreal x = (srcPointList[startPoint].x() + srcPointList[endPoint - 1].x()) / 2.0;
+
+        dstPointList.append(QPointF(x, minVal));
+        dstPointList.append(QPointF(x, maxVal));
+    }
+
+
+
+    return 0;
+}
+
+int MainWindow::chartViewDownSampling(const QList<QPointF> &srcPointList,
+                                      const int totalCbBars,
+                                      QList<QPointF> &dstPointList,
+                                      const int width)
+{
+    //降采样：totalCbBars -> pixelBars
+    //目标柱状图数量
+    const int pixelBars = width;
+
+    const int barInterval = totalCbBars / pixelBars;
+    if (barInterval == 0) {
+        dstPointList = srcPointList;
+        qCDebug(logPause) << "src.size太小了，除数为0";
+        return -1;
+    }
+
+    intervalDownSampling(m_durPoints,dstPointList,barInterval);
+
+
 }

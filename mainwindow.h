@@ -119,5 +119,8 @@ private:
     QList<QPointF> m_durPoints;//sdl每次取水的min/max点：1024->2（降采样）
     QList<QPointF> m_durTgtPoints;//依据chartView宽度，按像素数量从points取点
     QTimer m_durTimer;// = nullptr;
+    int blockDownSampling(const QList<QPointF>& srcPointList,QList<QPointF>& dstPointList,const int dstBars);
+    int intervalDownSampling(const QList<QPointF>& srcPointList,QList<QPointF>& dstPointList,const int dstBarInterval);
+    int chartViewDownSampling(const QList<QPointF>& srcPointList,const int totalCbBars,QList<QPointF>& dstPointList,const int width);
 };
 #endif // MAINWINDOW_H
