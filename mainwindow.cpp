@@ -358,29 +358,42 @@ int MainWindow::blockDownSampling(const QList<QPointF> &srcPointList,
                                   QList<QPointF> &dstPointList,
                                   const int dstBars)
 {
+    //分块峰值降采样
     //目标柱状图数量 dstBars
     //目标输出点的数量（一个bar对应2个点min/max）
     // const int dstPoints = dstBars * 2;
 
-    //分块峰值降采样
+    dstPointList.clear();
+
+    const int totalBars = srcPointList.size() / 2;
+    if (totalBars <= 0 || dstBars <= 0)
+        return -1;
+
+    //src太少，直接返回即可
+    if(totalBars<=dstBars){
+        dstPointList = srcPointList;
+        return 0;
+    }
+
     const int blocks = dstBars;//块数 ==  柱状图数
-    const int totalPoints = srcPointList.size(); //总点数
     //分块
     for (int block = 0; block < blocks; ++block) {
-        int startPoint = block * totalPoints / blocks;
-        int endPoint = (block + 1) * totalPoints / blocks;
+        int startBar = block * totalBars / blocks;
+        int endBar = (block + 1) * totalBars / blocks;
 
-        if (startPoint >= endPoint)
+        if (startBar >= endBar)
             continue;
 
         qreal maxVal = std::numeric_limits<qreal>::lowest();
         qreal minVal = std::numeric_limits<qreal>::max();
-        for (int i = startPoint; i < endPoint; ++i) {
-            maxVal = qMax(maxVal, srcPointList[i].y());
-            minVal = qMin(minVal, srcPointList[i].y());
+        for (int bar = startBar; bar < endBar; ++bar) {
+            const QPointF& p0 = srcPointList[bar * 2];
+            const QPointF& p1 = srcPointList[bar * 2 + 1];
+            maxVal = qMax(maxVal, qMax(p0.y(), p1.y()));
+            minVal = qMin(minVal, qMin(p0.y(), p1.y()));
         }
         //时间取块的中间值
-        qreal x = (srcPointList[startPoint].x() + srcPointList[endPoint - 1].x()) / 2.0;
+        qreal x = (srcPointList[startBar * 2].x() + srcPointList[(endBar - 1) * 2 + 1].x()) / 2.0;
 
         dstPointList.append(QPointF(x, minVal));
         dstPointList.append(QPointF(x, maxVal));
@@ -392,10 +405,14 @@ int MainWindow::intervalDownSampling(const QList<QPointF> &srcPointList,
                                      QList<QPointF> &dstPointList,
                                      const int dstBarInterval)
 {
+    //等间隔峰值降采样
+    //从srcBar里按BarInterval的大小，分成若干块，在从块里峰值降采样得到dstBar
+    //目标输出点的数量（一个bar对应2个点min/max）
+
     dstPointList.clear();
 
     const int totalBars = srcPointList.size() / 2;
-    if (dstBarInterval <= 0 || totalBars <= 0)
+    if (totalBars <= 0 || dstBarInterval <= 0)
         return -1;
 
     //间隔为1，直接返回即可
@@ -403,8 +420,6 @@ int MainWindow::intervalDownSampling(const QList<QPointF> &srcPointList,
         dstPointList = srcPointList;
         return 0;
     }
-
-    //从srcBar里按BarInterval的大小，分成若干块，在从块里峰值降采样得到dstBar
 
     // const int blocks = (totalBars + dstBarInterval - 1) / dstBarInterval;//如果想向上取整，不能简单blocks整除 +1。
     //不按 bar 分块，而是按照dstBarInterval固定间隔一刀一刀地切
