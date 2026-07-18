@@ -392,20 +392,26 @@ int MainWindow::intervalDownSampling(const QList<QPointF> &srcPointList,
                                      QList<QPointF> &dstPointList,
                                      const int dstBarInterval)
 {
-    if (dstBarInterval <= 0) {
+    dstPointList.clear();
+
+    const int totalBars = srcPointList.size() / 2;
+    if (dstBarInterval <= 0 || totalBars <= 0)
+        return -1;
+
+    //间隔为1，直接返回即可
+    if (dstBarInterval == 1) {
         dstPointList = srcPointList;
-        qDebug() << "无效的dstBarInterval：" << dstBarInterval << "不进行等间隔降采样。";
         return 0;
     }
 
     //从srcBar里按BarInterval的大小，分成若干块，在从块里峰值降采样得到dstBar
 
-    const int totalBars = srcPointList.size() / 2;
-    const int blocks = (totalBars + dstBarInterval - 1) / dstBarInterval;//如果想向上取整，不能简单blocks整除 +1。
-    //按 bar 分块
-    for (int block = 0; block < blocks; ++block) {
-        int startBar = block * totalBars / blocks;
-        int endBar = (block + 1) * totalBars / blocks;
+    // const int blocks = (totalBars + dstBarInterval - 1) / dstBarInterval;//如果想向上取整，不能简单blocks整除 +1。
+    //不按 bar 分块，而是按照dstBarInterval固定间隔一刀一刀地切
+    for (int startBar = 0; startBar < totalBars; startBar+=dstBarInterval) {
+        // int startBar = block * totalBars / blocks;
+        // int endBar = (block + 1) * totalBars / blocks;
+        int endBar = qMin(startBar + dstBarInterval, totalBars);
 
         qreal maxVal = std::numeric_limits<qreal>::lowest();
         qreal minVal = std::numeric_limits<qreal>::max();
