@@ -395,8 +395,8 @@ int MainWindow::blockDownSampling(const QList<QPointF> &srcPointList,
         //时间取块的中间值
         qreal x = (srcPointList[startBar * 2].x() + srcPointList[(endBar - 1) * 2 + 1].x()) / 2.0;
 
-        dstPointList.append(QPointF(x, minVal));
         dstPointList.append(QPointF(x, maxVal));
+        dstPointList.append(QPointF(x, minVal));
     }
     return 0;
 }
