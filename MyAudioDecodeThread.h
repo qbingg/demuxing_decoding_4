@@ -124,6 +124,7 @@ public:
 signals:
     void sendMessage();
     void sendDequeuedPcmBytes(QByteArray);
+    void sendpcmPeakBar(double,int16_t,int16_t);
 
 private:
     FFmpegPlayerCtx *is = nullptr;

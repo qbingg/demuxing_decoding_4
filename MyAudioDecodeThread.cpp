@@ -105,6 +105,27 @@ int MyAudioDecodeThread::decode_packet(AVCodecContext *dec, const AVPacket *pkt,
     return ret;
 }
 
+int pcmS16PeakBarDownSampling(int16_t *src,const int srcLen,int16_t &dstMax,int16_t &dstMin)
+{
+    //求采样点集的最大最小值，无论是LRLRLR,LLLRRR,LLLLLL
+
+    if (!src || srcLen <= 0)
+        return -1;
+
+    int16_t maxVal = std::numeric_limits<int16_t>::min();//-32768 获取 qint16 类型能表示的最小值。
+    int16_t minVal = std::numeric_limits<int16_t>::max();// 32767 获取 qint16 类型能表示的最大值。
+
+    for (int i = 0; i < srcLen; ++i) {
+        maxVal = qMax(maxVal, src[i]);
+        minVal = qMin(minVal, src[i]);
+    }
+
+    dstMax = maxVal;
+    dstMin = minVal;
+
+    return 0;
+}
+
 void MyAudioDecodeThread::getAudioData(unsigned char *stream, int len)
 {
     // decoder is not ready or in pause state, output silence
@@ -134,6 +155,16 @@ void MyAudioDecodeThread::getAudioData(unsigned char *stream, int len)
                                <<"duration:\t"<<duration;
 
         is->audio_clock = duration;
+
+        {
+            int16_t max,min;
+            pcmS16PeakBarDownSampling(reinterpret_cast<int16_t *>(stream),
+                                      len / bytes_per_sample,
+                                      max,
+                                      min);
+            sendpcmPeakBar(duration,max,min);
+        }
+
     }
 }
 

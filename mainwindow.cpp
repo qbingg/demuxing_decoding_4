@@ -167,69 +167,73 @@ void MainWindow::on_pushButton_clicked()
     m_myAudioDecodeThread = new MyAudioDecodeThread;
     m_myAudioDecodeThread->setPlayerCtx(playerCtx);
     initDurPcmChartView();
-    connect(m_myAudioDecodeThread,&MyAudioDecodeThread::sendDequeuedPcmBytes,this,[=](QByteArray bytes){
-        //涉及除法的就声明为double(qreal)
-        const int channels = playerCtx->audio_tgt_channels;//声道数
-        const qreal sampleRate = playerCtx->audio_tgt_freq;//采样率（每秒采样次数）44100.0;
-        const int bytes_per_sample = av_get_bytes_per_sample(playerCtx->audio_tgt_fmt);//采样点格式 2 Byte = 16 bit
-        if(bytes_per_sample == 2){
-            //将Byte转为采样点，转为采样帧
-            // 公式：Byte = ( sample * 采样点的位深 ) * 声道数
-            // 采样点 = Byte / 采样点的位深
-            // 采样帧 = 采样点 / 声道数
-            qint16 *sampleData = reinterpret_cast<qint16*>(bytes.data());
-            int totalSamples = bytes.size() / sizeof(qint16); // 总采样点数，多声道 {LR LR LR...} = 1024 * 2
-            const int totalFrames = channels > 0 ?  (totalSamples / channels) : 0;
+    // connect(m_myAudioDecodeThread,&MyAudioDecodeThread::sendDequeuedPcmBytes,this,[=](QByteArray bytes){
+    //     //涉及除法的就声明为double(qreal)
+    //     const int channels = playerCtx->audio_tgt_channels;//声道数
+    //     const qreal sampleRate = playerCtx->audio_tgt_freq;//采样率（每秒采样次数）44100.0;
+    //     const int bytes_per_sample = av_get_bytes_per_sample(playerCtx->audio_tgt_fmt);//采样点格式 2 Byte = 16 bit
+    //     if(bytes_per_sample == 2){
+    //         //将Byte转为采样点，转为采样帧
+    //         // 公式：Byte = ( sample * 采样点的位深 ) * 声道数
+    //         // 采样点 = Byte / 采样点的位深
+    //         // 采样帧 = 采样点 / 声道数
+    //         qint16 *sampleData = reinterpret_cast<qint16*>(bytes.data());
+    //         int totalSamples = bytes.size() / sizeof(qint16); // 总采样点数，多声道 {LR LR LR...} = 1024 * 2
+    //         const int totalFrames = channels > 0 ?  (totalSamples / channels) : 0;
 
-            /**
-             * 进度条波形图，累计的pcm数据*/
-            /**
-             * "播放时间-10s"波形图，累计的pcm数据*/
-            /* 2、分块峰值降采样法（等间隔法取区间最大值 + 最小值）
-             * 原理：把采样点分成若干等长的小区间（块），每个区间内计算采样值的最大值和最小值，用这两个点代表整个区间的波形范围。
-             * 音频波形显示的行业标准方案，Audacity、Adobe Audition、剪映等专业软件全部采用此方案。
-             */
-            {
-                const int tgtFrames = 1;//从totalFrames降至tgtFrames：1024->64->1
-                const int blockInterval = totalFrames / tgtFrames;//分块间隔
-                QList<QPointF> points;//==1*声道=2
-                points.reserve(tgtFrames * 2); // 每个区间两个点：分别是最大值和最小值
-                // 遍历每个block，一共有tgtFrames个分块
-                for (int block = 0; block < tgtFrames; ++block) {
-                    int startFrame = block * blockInterval;
-                    int endFrame = qMin(startFrame + blockInterval, totalFrames);
+    //         /**
+    //          * 进度条波形图，累计的pcm数据*/
+    //         /**
+    //          * "播放时间-10s"波形图，累计的pcm数据*/
+    //         /* 2、分块峰值降采样法（等间隔法取区间最大值 + 最小值）
+    //          * 原理：把采样点分成若干等长的小区间（块），每个区间内计算采样值的最大值和最小值，用这两个点代表整个区间的波形范围。
+    //          * 音频波形显示的行业标准方案，Audacity、Adobe Audition、剪映等专业软件全部采用此方案。
+    //          */
+    //         {
+    //             const int tgtFrames = 1;//从totalFrames降至tgtFrames：1024->64->1
+    //             const int blockInterval = totalFrames / tgtFrames;//分块间隔
+    //             QList<QPointF> points;//==1*声道=2
+    //             points.reserve(tgtFrames * 2); // 每个区间两个点：分别是最大值和最小值
+    //             // 遍历每个block，一共有tgtFrames个分块
+    //             for (int block = 0; block < tgtFrames; ++block) {
+    //                 int startFrame = block * blockInterval;
+    //                 int endFrame = qMin(startFrame + blockInterval, totalFrames);
 
-                    // 遍历块内所有frame，找峰值
-                    qint16 maxVal = std::numeric_limits<qint16>::min();//-32768 获取 qint16 类型能表示的最小值。
-                    qint16 minVal = std::numeric_limits<qint16>::max();// 32767 获取 qint16 类型能表示的最大值。
-                    for (int frameIndex = startFrame; frameIndex < endFrame; ++frameIndex) {
-                        const int sampleIndex = frameIndex * channels;
-                        qint16 sampleDataL = sampleData[sampleIndex]; // 左声道
-                        maxVal = qMax(maxVal, sampleDataL);
-                        minVal = qMin(minVal, sampleDataL);
-                        if(channels == 2){
-                            qint16 sampleDataR = sampleData[sampleIndex + 1]; // 右声道
-                            maxVal = qMax(maxVal, sampleDataR);
-                            minVal = qMin(minVal, sampleDataR);
-                        }
-                    }
-                    // //时间取block的中间值：startFrame->middleFrame->endFrame
-                    // qreal timeSec = ((startFrame + endFrame) / 2.0) / sampleRate;
-                    // // waveSeries->append(timeSec, maxVal);
-                    // // waveSeries->append(timeSec, minVal);
-                    // points.append(QPointF(timeSec, minVal));
-                    // points.append(QPointF(timeSec, maxVal));
-                    points.append(QPointF(playerCtx->audio_clock, minVal));//改用音频时钟
-                    points.append(QPointF(playerCtx->audio_clock, maxVal));//改用音频时钟
-                }
-                // // 一次性替换所有点，比循环append性能高很多
-                // waveSeries2->clear();
-                // waveSeries2->replace(points);
-                // m_durWaveSeries->append(points);//末尾追加，而不是清空替换
-                m_durPoints.append(points);
-            }
-        }
-    },Qt::QueuedConnection);//确保不是子线程操作GUI线程
+    //                 // 遍历块内所有frame，找峰值
+    //                 qint16 maxVal = std::numeric_limits<qint16>::min();//-32768 获取 qint16 类型能表示的最小值。
+    //                 qint16 minVal = std::numeric_limits<qint16>::max();// 32767 获取 qint16 类型能表示的最大值。
+    //                 for (int frameIndex = startFrame; frameIndex < endFrame; ++frameIndex) {
+    //                     const int sampleIndex = frameIndex * channels;
+    //                     qint16 sampleDataL = sampleData[sampleIndex]; // 左声道
+    //                     maxVal = qMax(maxVal, sampleDataL);
+    //                     minVal = qMin(minVal, sampleDataL);
+    //                     if(channels == 2){
+    //                         qint16 sampleDataR = sampleData[sampleIndex + 1]; // 右声道
+    //                         maxVal = qMax(maxVal, sampleDataR);
+    //                         minVal = qMin(minVal, sampleDataR);
+    //                     }
+    //                 }
+    //                 // //时间取block的中间值：startFrame->middleFrame->endFrame
+    //                 // qreal timeSec = ((startFrame + endFrame) / 2.0) / sampleRate;
+    //                 // // waveSeries->append(timeSec, maxVal);
+    //                 // // waveSeries->append(timeSec, minVal);
+    //                 // points.append(QPointF(timeSec, minVal));
+    //                 // points.append(QPointF(timeSec, maxVal));
+    //                 points.append(QPointF(playerCtx->audio_clock, minVal));//改用音频时钟
+    //                 points.append(QPointF(playerCtx->audio_clock, maxVal));//改用音频时钟
+    //             }
+    //             // // 一次性替换所有点，比循环append性能高很多
+    //             // waveSeries2->clear();
+    //             // waveSeries2->replace(points);
+    //             // m_durWaveSeries->append(points);//末尾追加，而不是清空替换
+    //             m_durPoints.append(points);
+    //         }
+    //     }
+    // },Qt::QueuedConnection);//确保不是子线程操作GUI线程
+    connect(m_myAudioDecodeThread,&MyAudioDecodeThread::sendpcmPeakBar,this,[=](double time,int16_t max,int16_t min){
+        m_durPoints.append(QPointF(time,max));
+        m_durPoints.append(QPointF(time,min));
+    });
 //     connect(&m_durTimer,&QTimer::timeout,this,[=]{
 //         // m_durWaveSeries->replace(m_durPoints);
 
