@@ -325,7 +325,7 @@ void MainWindow::on_pushButton_clicked()
         QList<QPointF> pList;
         // blockDownSampling(m_durPoints,pList,pixelBars);
         // intervalDownSampling(m_durPoints,pList,dspBarsInterval);
-        chartViewDownSampling(m_durPoints,totalCbBars,pList,ui->durPcmChartView->width());
+        durBarChartViewDownSampling(m_durPoints,totalCbBars,pList,ui->durPcmChartView->width());
 
         m_durWaveSeries->replace(pList);
 
@@ -448,10 +448,10 @@ int MainWindow::intervalDownSampling(const QList<QPointF> &srcPointList,
     return 0;
 }
 
-int MainWindow::chartViewDownSampling(const QList<QPointF> &srcPointList,
-                                      const int totalCbBars,
-                                      QList<QPointF> &dstPointList,
-                                      const int width)
+int MainWindow::durBarChartViewDownSampling(const QList<QPointF> &srcPointList,
+                                            const int totalCbBars,
+                                            QList<QPointF> &dstPointList,
+                                            const int width)
 {
     //降采样：totalCbBars -> pixelBars
     //目标柱状图数量

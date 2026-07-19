@@ -121,6 +121,6 @@ private:
     QTimer m_durTimer;// = nullptr;
     int blockDownSampling(const QList<QPointF>& srcPointList,QList<QPointF>& dstPointList,const int dstBars);
     int intervalDownSampling(const QList<QPointF>& srcPointList,QList<QPointF>& dstPointList,const int dstBarInterval);
-    int chartViewDownSampling(const QList<QPointF>& srcPointList,const int totalCbBars,QList<QPointF>& dstPointList,const int width);
+    int durBarChartViewDownSampling(const QList<QPointF>& srcPointList,const int totalCbBars,QList<QPointF>& dstPointList,const int width);
 };
 #endif // MAINWINDOW_H
