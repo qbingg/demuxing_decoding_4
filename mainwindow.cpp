@@ -167,6 +167,7 @@ void MainWindow::on_pushButton_clicked()
     m_myAudioDecodeThread = new MyAudioDecodeThread;
     m_myAudioDecodeThread->setPlayerCtx(playerCtx);
     initDurPcmChartView();
+    m_durPoints.clear();//清空进度条list
     connect(m_myAudioDecodeThread,&MyAudioDecodeThread::sendpcmPeakBar,this,[=](double time,int16_t max,int16_t min){
         m_durPoints.append(QPointF(time,max));
         m_durPoints.append(QPointF(time,min));
