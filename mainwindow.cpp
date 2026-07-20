@@ -1,7 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-Q_LOGGING_CATEGORY(logPause, "player.pause") // 定义，名称为 ""
+Q_LOGGING_CATEGORY(logDurBar, "player.durBar") // 定义，名称为 ""
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -100,7 +100,7 @@ void MainWindow::resizeEvent(QResizeEvent *event)
 {
     QMainWindow::resizeEvent(event);
 
-    qCDebug(logPause)<<"Chart的宽："<<ui->durPcmChartView->width();
+    qCDebug(logDurBar)<<"Chart的宽："<<ui->durPcmChartView->width();
 }
 
 void MainWindow::on_pushButton_clicked()
@@ -167,142 +167,10 @@ void MainWindow::on_pushButton_clicked()
     m_myAudioDecodeThread = new MyAudioDecodeThread;
     m_myAudioDecodeThread->setPlayerCtx(playerCtx);
     initDurPcmChartView();
-    // connect(m_myAudioDecodeThread,&MyAudioDecodeThread::sendDequeuedPcmBytes,this,[=](QByteArray bytes){
-    //     //涉及除法的就声明为double(qreal)
-    //     const int channels = playerCtx->audio_tgt_channels;//声道数
-    //     const qreal sampleRate = playerCtx->audio_tgt_freq;//采样率（每秒采样次数）44100.0;
-    //     const int bytes_per_sample = av_get_bytes_per_sample(playerCtx->audio_tgt_fmt);//采样点格式 2 Byte = 16 bit
-    //     if(bytes_per_sample == 2){
-    //         //将Byte转为采样点，转为采样帧
-    //         // 公式：Byte = ( sample * 采样点的位深 ) * 声道数
-    //         // 采样点 = Byte / 采样点的位深
-    //         // 采样帧 = 采样点 / 声道数
-    //         qint16 *sampleData = reinterpret_cast<qint16*>(bytes.data());
-    //         int totalSamples = bytes.size() / sizeof(qint16); // 总采样点数，多声道 {LR LR LR...} = 1024 * 2
-    //         const int totalFrames = channels > 0 ?  (totalSamples / channels) : 0;
-
-    //         /**
-    //          * 进度条波形图，累计的pcm数据*/
-    //         /**
-    //          * "播放时间-10s"波形图，累计的pcm数据*/
-    //         /* 2、分块峰值降采样法（等间隔法取区间最大值 + 最小值）
-    //          * 原理：把采样点分成若干等长的小区间（块），每个区间内计算采样值的最大值和最小值，用这两个点代表整个区间的波形范围。
-    //          * 音频波形显示的行业标准方案，Audacity、Adobe Audition、剪映等专业软件全部采用此方案。
-    //          */
-    //         {
-    //             const int tgtFrames = 1;//从totalFrames降至tgtFrames：1024->64->1
-    //             const int blockInterval = totalFrames / tgtFrames;//分块间隔
-    //             QList<QPointF> points;//==1*声道=2
-    //             points.reserve(tgtFrames * 2); // 每个区间两个点：分别是最大值和最小值
-    //             // 遍历每个block，一共有tgtFrames个分块
-    //             for (int block = 0; block < tgtFrames; ++block) {
-    //                 int startFrame = block * blockInterval;
-    //                 int endFrame = qMin(startFrame + blockInterval, totalFrames);
-
-    //                 // 遍历块内所有frame，找峰值
-    //                 qint16 maxVal = std::numeric_limits<qint16>::min();//-32768 获取 qint16 类型能表示的最小值。
-    //                 qint16 minVal = std::numeric_limits<qint16>::max();// 32767 获取 qint16 类型能表示的最大值。
-    //                 for (int frameIndex = startFrame; frameIndex < endFrame; ++frameIndex) {
-    //                     const int sampleIndex = frameIndex * channels;
-    //                     qint16 sampleDataL = sampleData[sampleIndex]; // 左声道
-    //                     maxVal = qMax(maxVal, sampleDataL);
-    //                     minVal = qMin(minVal, sampleDataL);
-    //                     if(channels == 2){
-    //                         qint16 sampleDataR = sampleData[sampleIndex + 1]; // 右声道
-    //                         maxVal = qMax(maxVal, sampleDataR);
-    //                         minVal = qMin(minVal, sampleDataR);
-    //                     }
-    //                 }
-    //                 // //时间取block的中间值：startFrame->middleFrame->endFrame
-    //                 // qreal timeSec = ((startFrame + endFrame) / 2.0) / sampleRate;
-    //                 // // waveSeries->append(timeSec, maxVal);
-    //                 // // waveSeries->append(timeSec, minVal);
-    //                 // points.append(QPointF(timeSec, minVal));
-    //                 // points.append(QPointF(timeSec, maxVal));
-    //                 points.append(QPointF(playerCtx->audio_clock, minVal));//改用音频时钟
-    //                 points.append(QPointF(playerCtx->audio_clock, maxVal));//改用音频时钟
-    //             }
-    //             // // 一次性替换所有点，比循环append性能高很多
-    //             // waveSeries2->clear();
-    //             // waveSeries2->replace(points);
-    //             // m_durWaveSeries->append(points);//末尾追加，而不是清空替换
-    //             m_durPoints.append(points);
-    //         }
-    //     }
-    // },Qt::QueuedConnection);//确保不是子线程操作GUI线程
     connect(m_myAudioDecodeThread,&MyAudioDecodeThread::sendpcmPeakBar,this,[=](double time,int16_t max,int16_t min){
         m_durPoints.append(QPointF(time,max));
         m_durPoints.append(QPointF(time,min));
     });
-//     connect(&m_durTimer,&QTimer::timeout,this,[=]{
-//         // m_durWaveSeries->replace(m_durPoints);
-
-//         const int pixels = ui->durPcmChartView->width();
-
-//         //对m_durPoints取pixels个min/max点，应该是等间隔还是再次使用分块峰值降采样法？
-//         if (m_durPoints.size() <= pixels) {
-//             m_durWaveSeries->replace(m_durPoints);
-//             return;
-//         }
-//         qCDebug(logPause)<<"m_durPoints.size() > pixels"<<m_durPoints.size()<<"\t"<<ui->durPcmChartView->width();
-
-//         //m_durTgtPoints//QList<QPointF>
-//         // const int tgtBlocks = pixels;
-//         // const int blockInterval = m_durPoints.size() / tgtBlocks;//分块间隔
-//         // QList<QPointF> points;//==pixels*2
-//         // points.reserve(tgtBlocks * 2); // 每个区间两个点：分别是最大值和最小值
-//         // // 遍历每个block，一共有tgtFrames个分块
-//         // for (int block = 0; block < tgtBlocks; ++block) {
-//         //     int startPoint = block * blockInterval;
-//         //     int endPoint = qMin(startPoint + blockInterval, m_durPoints.size());
-//         //
-//         //     // 遍历块内所有frame，找峰值
-//         //     qint16 maxVal = std::numeric_limits<qint16>::min();//-32768 获取 qint16 类型能表示的最小值。
-//         //     qint16 minVal = std::numeric_limits<qint16>::max();// 32767 获取 qint16 类型能表示的最大值。
-//         //     QPointF maxPoint = QPointF(0, maxVal);
-//         //     QPointF minPoint = QPointF(0, minVal);
-//         //     for (int i = startPoint; i < endPoint; ++i) {
-//         //         if (maxPoint.y() < m_durPoints[i].y())
-//         //             maxPoint = m_durPoints[i];
-//         //         // minPoint = qMin(minPoint,m_durPoints[i])
-//         //         if (minPoint.y() > m_durPoints[i].y())
-//         //             minPoint = m_durPoints[i];
-//         //     }
-//         //     points.append(maxPoint);
-//         //     points.append(minPoint);
-//         // }
-//         const int tgtBlocks = pixels;
-//         const int total = m_durPoints.size();
-
-//         QList<QPointF> points;
-//         points.reserve(tgtBlocks * 2);
-
-//         for (int block = 0; block < tgtBlocks; ++block) {
-//             int startPoint = block * total / tgtBlocks;
-//             int endPoint = (block + 1) * total / tgtBlocks;
-
-//             if (startPoint >= endPoint)
-//                 continue;
-
-//             qreal maxVal = std::numeric_limits<qreal>::lowest();
-//             qreal minVal = std::numeric_limits<qreal>::max();
-
-//             for (int i = startPoint; i < endPoint; ++i) {
-//                 maxVal = qMax(maxVal, m_durPoints[i].y());
-//                 minVal = qMin(minVal, m_durPoints[i].y());
-//             }
-
-//             qreal x = (m_durPoints[startPoint].x() + m_durPoints[endPoint - 1].x()) / 2.0;
-
-//             points.append(QPointF(x, minVal));
-//             points.append(QPointF(x, maxVal));
-//         }
-
-//         m_durWaveSeries->replace(points);
-// qCDebug(logPause)<<"m_durWaveSeries->replace(points)";//<<m_durPoints.size()<<"\t"<<ui->durPcmChartView->width();
-
-//     });
-//     m_durTimer.start(100);
     connect(&m_durTimer,&QTimer::timeout,this,[=]{
         // m_durWaveSeries->replace(m_durPoints);
 
@@ -355,7 +223,7 @@ void MainWindow::on_btnPause_clicked(bool checked)
         playerCtx->pause = false;
     }
 
-    qCDebug(logPause) << "playerCtx->pause: " << playerCtx->pause;
+    qCDebug(logDurBar) << "playerCtx->pause: " << playerCtx->pause;
 }
 
 int MainWindow::blockDownSampling(const QList<QPointF> &srcPointList,
@@ -460,9 +328,9 @@ int MainWindow::durBarChartViewDownSampling(const QList<QPointF> &srcPointList,
     const int barInterval = totalCbBars / pixelBars;
     if (barInterval == 0) {
         dstPointList = srcPointList;
-        qCDebug(logPause) << "src.size太小了，除数为0，无需降采样";
+        qCDebug(logDurBar) << "src.size太小了，除数为0，无需降采样";
         return 0;
     }
 
-    intervalDownSampling(srcPointList,dstPointList,barInterval);
+    return intervalDownSampling(srcPointList,dstPointList,barInterval);
 }

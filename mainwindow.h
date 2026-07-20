@@ -31,7 +31,7 @@ extern "C"{
 #include "MyVideoDecodeThread.h"
 
 #include <QLoggingCategory>
-Q_DECLARE_LOGGING_CATEGORY(logPause) // 声明
+Q_DECLARE_LOGGING_CATEGORY(logDurBar) // 声明
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -117,7 +117,7 @@ private:
     QValueAxis *m_durAxisX = nullptr;
     QValueAxis *m_durAxisY = nullptr;
     QList<QPointF> m_durPoints;//sdl每次取水的min/max点：1024->2（降采样）
-    QList<QPointF> m_durTgtPoints;//依据chartView宽度，按像素数量从points取点
+    // QList<QPointF> m_durTgtPoints;//依据chartView宽度，按像素数量从points取点
     QTimer m_durTimer;// = nullptr;
     int blockDownSampling(const QList<QPointF>& srcPointList,QList<QPointF>& dstPointList,const int dstBars);
     int intervalDownSampling(const QList<QPointF>& srcPointList,QList<QPointF>& dstPointList,const int dstBarInterval);
