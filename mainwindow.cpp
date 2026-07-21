@@ -217,11 +217,14 @@ void MainWindow::on_btnPause_clicked(bool checked)
         ui->btnPause->setText("继续");
 
         playerCtx->pause = true;
+        SDL_PauseAudio(1);
+
 
     }else{
         ui->btnPause->setText("暂停");
 
         playerCtx->pause = false;
+        SDL_PauseAudio(0);
     }
 
     qCDebug(logDurBar) << "playerCtx->pause: " << playerCtx->pause;

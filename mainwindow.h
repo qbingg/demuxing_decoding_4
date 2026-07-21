@@ -76,6 +76,10 @@ struct FFmpegPlayerCtx {
 
     std::atomic<double> audio_clock = 0;//使用出队PCM Byte clock作为音频时钟
 
+    /* 暂停功能：只需要暂停消费端，生产端不需要控制
+     * 1、暂停音频播放设备：SDL_PauseAudio(0);//跟OpenGL一样是状态机，可全局调用
+     * 2、暂停视频解码：if(is->pause) {msleep(10);continue;}
+     */
     std::atomic<bool> pause = false;
 
     // int width, height;我直接使用了AVFrame解码后自带的宽高，也就不需要video_dec_ctx->width;

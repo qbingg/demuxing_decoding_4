@@ -153,6 +153,11 @@ void MyVideoDecodeThread::run()
         if(m_stop)
             break;
 
+        if (is->pause) {
+            msleep(10);
+            continue;
+        }
+
         //尝试从队列获取一个包（阻塞）
         if(is->videoq.dequeue(pkt,m_stop) < 0){
             qDebug() << "解码线程：获取包失败。";
