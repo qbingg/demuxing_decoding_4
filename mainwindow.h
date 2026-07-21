@@ -82,6 +82,21 @@ struct FFmpegPlayerCtx {
      */
     std::atomic<bool> pause = false;
 
+    /* 跳转seek功能
+     * 精度为I帧AVPacket级别
+     *
+     */
+    // seek flags and pos for seek
+    std::atomic<int> seek_req;//请求标志
+    int              seek_flags;//跳转标志：前进、后退
+    int64_t          seek_pos;//跳转的时间，注意：pos * AV_TIME_BASE 是先把秒统一成 FFmpeg 的通用微秒时间戳；av_rescale_q 再把这个通用时间戳换算成具体音频/视频流自己的时间基。
+    // flush flag for seek//清的是 FFmpeg 解码器内部缓存。（旧的 P/B 帧依赖的前后帧等）
+    std::atomic<bool> flush_actx = false;
+    std::atomic<bool> flush_vctx = false;
+
+
+
+
     // int width, height;我直接使用了AVFrame解码后自带的宽高，也就不需要video_dec_ctx->width;
     // enum AVPixelFormat pix_fmt;在demux初始化，在yuv转rgb用到，但是这个项目就是yuv420P转rgb，不考虑其他格式的话，就不需要这个变量
 };
