@@ -164,7 +164,7 @@ void MyDemuxThread::run()
             break;
 
         // 检查队列pkt的数量
-        if (is->audioq.getSize() > MAX_AUDIOQ_SIZE || is->videoq.getSize() > MAX_VIDEOQ_SIZE) {
+        if (is->audioq.getSize() > MAX_AUDIOQ_SIZE && is->videoq.getSize() > MAX_VIDEOQ_SIZE) {
             msleep(10);// SDL_Delay(10);
             continue;
         }
