@@ -81,7 +81,18 @@ public:
         }
         return ret;
     }
+    //清空队列
+    void packetFlush()
+    {
+        const QMutexLocker locker(&mutex); //加锁，锁不上就在这里阻塞着
 
+        // 释放所有packet内存（和原来一致）
+        for (auto &pkt : queue) {
+            av_packet_unref(pkt);
+        }
+        queue.clear();
+        size = 0;
+    }
     int getSize() const
     {
         return size;
