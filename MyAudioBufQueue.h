@@ -35,7 +35,7 @@ public:
         return ret;
     }
     //出队
-    int dequeue(unsigned char* data, int len, std::atomic<bool> &quit)
+    int dequeue(unsigned char* data, int len, std::atomic<bool> &quit, std::atomic<bool> &pause)
     {
         int ret = 0;
         {
@@ -57,7 +57,7 @@ public:
                 }
 
                 // 退出标记
-                if (quit) {
+                if (quit || pause) {
                     ret = -1;
                     break;
                 }

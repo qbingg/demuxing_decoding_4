@@ -134,7 +134,7 @@ void MyAudioDecodeThread::getAudioData(unsigned char *stream, int len)
         return;
     }
 
-    int ret = is->audio_buf_q.dequeue(stream, len, m_stop);
+    int ret = is->audio_buf_q.dequeue(stream, len, m_stop,is->pause);
     if (ret == -1) {
         memset(stream, 0, len);
         return;
