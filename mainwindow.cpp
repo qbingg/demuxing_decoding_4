@@ -3,6 +3,32 @@
 
 Q_LOGGING_CATEGORY(logDurBar, "player.durBar") // 定义，名称为 ""
 
+void stream_seek(FFmpegPlayerCtx *is, double targetSec, int rel = -1)
+{
+    //把秒统一成 FFmpeg 的通用微秒时间戳
+    int64_t pos = targetSec *  AV_TIME_BASE;
+    /*默认 rel = -1 是因为：
+     * is->seek_flags = rel < 0 ? AVSEEK_FLAG_BACKWARD : 0;
+     * 这行是在决定：seek 到目标时间附近时，允许 FFmpeg 选目标时间之前还是之后的关键点。
+     * 粗略 seek：可以根据方向决定 flag
+     * 精确 seek：统一使用 AVSEEK_FLAG_BACKWARD ，后续再解码到目标帧（因为“精确”需要从目标前面的关键帧开始追帧。）
+     *因为精确 seek 的经典流程是：
+     * 1、seek 到目标时间之前的关键帧
+     *     -> flush decoder
+     *     -> 从关键帧开始解码
+     *     -> 丢弃 target 前的帧
+     *     -> 显示 target 附近/之后的第一帧
+     * 2、如果只是普通播放器“粗 seek”，它可能这样设计：
+     *     向前 +10s：不带 BACKWARD，尽快跳到后面的关键帧
+     *     向后 -10s：带 BACKWARD，保证不要跳到目标之后
+     *     这样响应会快一点，但不精确。*/
+    if (!is->seek_req) {
+        is->seek_pos = pos;
+        is->seek_flags = rel < 0 ? AVSEEK_FLAG_BACKWARD : 0;
+        is->seek_req = true;
+    }
+}
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)

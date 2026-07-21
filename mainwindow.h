@@ -87,9 +87,9 @@ struct FFmpegPlayerCtx {
      *
      */
     // seek flags and pos for seek
-    std::atomic<int> seek_req;//请求标志
+    std::atomic<bool> seek_req;//请求标志
     int              seek_flags;//跳转标志：前进、后退
-    int64_t          seek_pos;//跳转的时间，注意：pos * AV_TIME_BASE 是先把秒统一成 FFmpeg 的通用微秒时间戳；av_rescale_q 再把这个通用时间戳换算成具体音频/视频流自己的时间基。
+    int64_t          seek_pos;//跳转的时间(微秒)，注意：seek_pos = sec * AV_TIME_BASE 是先把秒统一成 FFmpeg 的通用微秒时间戳；av_rescale_q 再把这个通用时间戳换算成具体音频/视频流自己的时间基。
     // flush flag for seek//清的是 FFmpeg 解码器内部缓存。（旧的 P/B 帧依赖的前后帧等）
     std::atomic<bool> flush_actx = false;
     std::atomic<bool> flush_vctx = false;
