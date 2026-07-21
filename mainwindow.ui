@@ -14,12 +14,19 @@
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout" stretch="3,1,0">
+   <layout class="QVBoxLayout" name="verticalLayout" stretch="3,1,0,0">
     <item>
      <widget class="MyYUV420POpenGLWidget" name="widget" native="true"/>
     </item>
     <item>
      <widget class="QChartView" name="durPcmChartView" native="true"/>
+    </item>
+    <item>
+     <widget class="QSlider" name="horizontalSlider">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
     </item>
     <item>
      <layout class="QHBoxLayout" name="horizontalLayout">
@@ -47,6 +54,20 @@
        <widget class="QPushButton" name="btnPause">
         <property name="text">
          <string>暂停</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnRewind">
+        <property name="text">
+         <string>-10s</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnForward">
+        <property name="text">
+         <string>+10s</string>
         </property>
        </widget>
       </item>

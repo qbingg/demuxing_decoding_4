@@ -172,6 +172,7 @@ void MainWindow::on_pushButton_clicked()
         m_durPoints.append(QPointF(time,max));
         m_durPoints.append(QPointF(time,min));
     });
+    ui->horizontalSlider->setRange(0, (playerCtx->audio_stream->duration * av_q2d(playerCtx->audio_stream->time_base))); // 时长 0~duration(音频流)，注意要考虑时间基
     connect(&m_durTimer,&QTimer::timeout,this,[=]{
         // m_durWaveSeries->replace(m_durPoints);
 
@@ -197,6 +198,12 @@ void MainWindow::on_pushButton_clicked()
         durBarChartViewDownSampling(m_durPoints,totalCbBars,pList,ui->durPcmChartView->width());
 
         m_durWaveSeries->replace(pList);
+
+        {
+            const QSignalBlocker blocker(ui->horizontalSlider);
+            // no signals here
+            ui->horizontalSlider->setValue(playerCtx->audio_clock);
+        }
 
     });
     m_durTimer.start(100);
