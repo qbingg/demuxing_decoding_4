@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 
 Q_LOGGING_CATEGORY(logDurBar, "player.durBar") // 定义，名称为 ""
+Q_LOGGING_CATEGORY(logSeek, "seek")
 
 void stream_seek(FFmpegPlayerCtx *is, double targetSec, int rel = -1)
 {
@@ -86,6 +87,31 @@ void MainWindow::initDurPcmChartView()
     // // 去掉坐标轴网格
     // m_durAxisX->setGridLineVisible(false);
     // m_durAxisY->setGridLineVisible(false);
+}
+
+void MainWindow::seekRelative(double offsetSec)
+{
+    double targetSec = playerCtx->audio_clock + offsetSec;
+    //边界检查 0 <= targetSec <= durationSec
+    double durationSec = (playerCtx->audio_stream->duration * av_q2d(playerCtx->audio_stream->time_base)); // 时长 0~duration(音频流)，注意要考虑时间基
+    targetSec = qBound(0.0, targetSec, durationSec);
+
+    qCDebug(logSeek) << "seekRelative to:" << targetSec
+                     << "audio_clock:" << playerCtx->audio_clock;
+
+    stream_seek(playerCtx,targetSec);
+}
+
+void MainWindow::seekAbsolute(double targetSec)
+{
+    //边界检查 0 <= targetSec <= durationSec
+    double durationSec = (playerCtx->audio_stream->duration * av_q2d(playerCtx->audio_stream->time_base)); // 时长 0~duration(音频流)，注意要考虑时间基
+    targetSec = qBound(0.0, targetSec, durationSec);
+
+    qCDebug(logSeek) << "seekAbsolute to:" << targetSec
+                     << "audio_clock:" << playerCtx->audio_clock;
+
+    stream_seek(playerCtx,targetSec);
 }
 
 void MainWindow::dragEnterEvent(QDragEnterEvent *event)
@@ -228,7 +254,9 @@ void MainWindow::on_pushButton_clicked()
         {
             const QSignalBlocker blocker(ui->horizontalSlider);
             // no signals here
-            ui->horizontalSlider->setValue(playerCtx->audio_clock);
+            //如果用户正在拖拽Slider，则不更新
+            if (!ui->horizontalSlider->isSliderDown())
+                ui->horizontalSlider->setValue(playerCtx->audio_clock);
         }
 
     });
@@ -370,4 +398,28 @@ int MainWindow::durBarChartViewDownSampling(const QList<QPointF> &srcPointList,
     }
 
     return intervalDownSampling(srcPointList,dstPointList,barInterval);
+}
+
+void MainWindow::on_btnRewind_clicked()
+{
+    if (!playerCtx)
+        return;
+
+    seekRelative(-10);
+}
+
+void MainWindow::on_btnForward_clicked()
+{
+    if (!playerCtx)
+        return;
+
+    seekRelative(+10);
+}
+
+void MainWindow::on_horizontalSlider_sliderReleased()
+{
+    if (!playerCtx)
+        return;
+
+    seekAbsolute(ui->horizontalSlider->value());
 }

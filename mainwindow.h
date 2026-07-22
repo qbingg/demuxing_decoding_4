@@ -111,6 +111,9 @@ public:
 
     void initDurPcmChartView();
 
+    void seekRelative(double offsetSec);
+    void seekAbsolute(double targetSec);
+
 protected:
     void dragEnterEvent(QDragEnterEvent *event);
     void dropEvent(QDropEvent *event);
@@ -119,6 +122,12 @@ private slots:
     void on_pushButton_clicked();
 
     void on_btnPause_clicked(bool checked);
+
+    void on_btnRewind_clicked();
+
+    void on_btnForward_clicked();
+
+    void on_horizontalSlider_sliderReleased();
 
 private:
     Ui::MainWindow *ui;
