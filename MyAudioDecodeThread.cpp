@@ -249,6 +249,14 @@ void MyAudioDecodeThread::run()
         if(m_stop)
             break;
 
+        //seek后，刷新dec_ctx解码上下文
+        if (is->flush_actx) {
+            is->flush_actx = false;
+            qCDebug(logSeek) << "音频解码线程：seek后，刷新dec_ctx解码上下文";
+            avcodec_flush_buffers(is->audio_dec_ctx);
+            continue;
+        }
+
         // 检查audio_buf队列的数量
         if(is->audio_buf_q.getSize() > MAX_AUDIO_BUF_Q_SIZE){
             msleep(10);// SDL_Delay(10);

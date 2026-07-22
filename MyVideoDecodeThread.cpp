@@ -158,6 +158,14 @@ void MyVideoDecodeThread::run()
             continue;
         }
 
+        //seek后，刷新dec_ctx解码上下文
+        if (is->flush_vctx) {
+            qCDebug(logSeek) << "视频解码线程：seek后，刷新dec_ctx解码上下文";
+            avcodec_flush_buffers(is->video_dec_ctx);
+            is->flush_vctx = false;
+            continue;
+        }
+
         //尝试从队列获取一个包（阻塞）
         if(is->videoq.dequeue(pkt,m_stop) < 0){
             qDebug() << "解码线程：获取包失败。";
