@@ -32,6 +32,7 @@ extern "C"{
 
 #include <QLoggingCategory>
 Q_DECLARE_LOGGING_CATEGORY(logDurBar) // 声明
+Q_DECLARE_LOGGING_CATEGORY(logSeek) // 声明
 
 QT_BEGIN_NAMESPACE
 namespace Ui {

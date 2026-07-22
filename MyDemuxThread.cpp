@@ -163,6 +163,40 @@ void MyDemuxThread::run()
         if(m_stop)
             break;
 
+        // begin seek
+        if (is->seek_req) {
+            int stream_index= -1;//av_seek_frame(): 如果stream_index为(-1)，则选择默认流，并且timestamp会自动从AV_TIME_BASE单位转换为流特定的time_base。
+            int64_t seek_target = is->seek_pos;
+
+            if (is->video_stream_idx >= 0) {
+                stream_index = is->video_stream_idx;
+                qCDebug(logSeek) << "demuxThread: seek video_stream";
+            } else if(is->audio_stream_idx >= 0) {
+                stream_index = is->audio_stream_idx;
+                qCDebug(logSeek) << "demuxThread: seek audio_stream";
+            }
+
+            if (stream_index >= 0) {
+                seek_target= av_rescale_q(seek_target, AVRational{1, AV_TIME_BASE}, is->fmt_ctx->streams[stream_index]->time_base);
+            }
+
+            if (av_seek_frame(is->fmt_ctx, stream_index, seek_target, is->seek_flags) < 0) {
+                qCDebug(logSeek) << "demuxThread: error while seeking";
+            } else {
+                if(is->audio_stream_idx >= 0) {
+                    is->audioq.packetFlush();
+                    is->flush_actx = true;
+                }
+                if (is->video_stream_idx >= 0) {
+                    is->videoq.packetFlush();
+                    is->flush_vctx = true;
+                }
+            }
+
+            // reset to zero when seeking done
+            is->seek_req = false;
+        }
+
         // 检查队列pkt的数量
         if (is->audioq.getSize() > MAX_AUDIOQ_SIZE && is->videoq.getSize() > MAX_VIDEOQ_SIZE) {
             msleep(10);// SDL_Delay(10);
