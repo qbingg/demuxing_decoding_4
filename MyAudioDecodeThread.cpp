@@ -249,11 +249,13 @@ void MyAudioDecodeThread::run()
         if(m_stop)
             break;
 
-        //seek后，刷新dec_ctx解码上下文
+        //seek后，刷新dec_ctx解码上下文，音频解码线程还得单独清理PCM buf队列
         if (is->flush_actx) {
             is->flush_actx = false;
             qCDebug(logSeek) << "音频解码线程：seek后，刷新dec_ctx解码上下文";
             avcodec_flush_buffers(is->audio_dec_ctx);
+            //清理PCM buf队列，不然1~2秒后才会播放seek的音频
+            is->audio_buf_q.bufFlush();
             continue;
         }
 

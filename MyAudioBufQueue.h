@@ -65,7 +65,15 @@ public:
         }
         return ret;
     }
+    //清空队列
+    void bufFlush()
+    {
+        const QMutexLocker locker(&mutex); //加锁，锁不上就在这里阻塞着
 
+        // 释放所有 PCM buf
+        queue.clear();
+        size = 0;
+    }
     int getSize() const
     {
         return size;
