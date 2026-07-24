@@ -3,6 +3,7 @@
 
 Q_LOGGING_CATEGORY(logDurBar, "player.durBar") // 定义，名称为 ""
 Q_LOGGING_CATEGORY(logSeek, "seek")
+Q_LOGGING_CATEGORY(logPts, "pts")
 
 void stream_seek(FFmpegPlayerCtx *is, double targetSec, int rel = -1)
 {

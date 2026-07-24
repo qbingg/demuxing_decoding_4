@@ -33,6 +33,7 @@ extern "C"{
 #include <QLoggingCategory>
 Q_DECLARE_LOGGING_CATEGORY(logDurBar) // 声明
 Q_DECLARE_LOGGING_CATEGORY(logSeek) // 声明
+Q_DECLARE_LOGGING_CATEGORY(logPts) // 声明
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -76,6 +77,9 @@ struct FFmpegPlayerCtx {
     std::atomic<uint64_t> total_dequeued_pcm_bytes = 0;//记录pcm入队列size数（Byte）
 
     std::atomic<double> audio_clock = 0;//使用出队PCM Byte clock作为音频时钟
+    //使用解码frame.pts-出队size作为音频时钟
+    std::atomic<double> audio_enqueue_pts = 0;
+    std::atomic<double> audio_pts_clock = 0;
 
     /* 暂停功能：只需要暂停消费端，生产端不需要控制
      * 1、暂停音频播放设备：SDL_PauseAudio(0);//跟OpenGL一样是状态机，可全局调用
