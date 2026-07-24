@@ -101,6 +101,21 @@ int MyAudioDecodeThread::decode_packet(AVCodecContext *dec, const AVPacket *pkt,
 
         is->audio_enqueue_pts = frame->pts * av_q2d(is->audio_stream->time_base);//frame->time_base = 0,！！！24、时间基time_base用AVStream
         // qCDebug(logPts) << "audio_enqueue_pts：" << is->audio_enqueue_pts;
+        {
+            //frame的PCM播放持续时间
+            uint64_t bytes = dst.size();
+            // 换算成采样点sample，公式：Byte = ( sample * 采样点的位深 ) * 声道数
+            double channels = static_cast<double>(is->audio_tgt_channels);
+            double bytes_per_sample = av_get_bytes_per_sample(is->audio_tgt_fmt);
+            uint64_t samples = (bytes / channels) / bytes_per_sample;
+            // 换算成时间s，公式：s = 采样点 / 每秒采样次数sample_rate
+            double sample_rate = is->audio_tgt_freq;
+            double duration = samples / sample_rate;
+
+            double pts = frame->pts * av_q2d(is->audio_stream->time_base);//frame->time_base = 0,！！！24、时间基time_base用AVStream
+            double frame_duration = duration;
+            is->audio_enqueue_tail_clock = pts + frame_duration;
+        }
 
         av_frame_unref(frame);
     }
@@ -135,6 +150,22 @@ void MyAudioDecodeThread::getAudioData(unsigned char *stream, int len)
     if (!is->audio_dec_ctx) {
         memset(stream, 0, len);
         return;
+    }
+
+    {
+        // 队内剩余Byte
+        int bytes = is->audio_buf_q.getSize();
+        // 换算成采样点sample，公式：Byte = ( sample * 采样点的位深 ) * 声道数
+        double channels = static_cast<double>(is->audio_tgt_channels);
+        double bytes_per_sample = av_get_bytes_per_sample(is->audio_tgt_fmt);
+        uint64_t samples = (bytes / channels) / bytes_per_sample;
+        // 换算成时间s，公式：s = 采样点 / 每秒采样次数sample_rate
+        double sample_rate = is->audio_tgt_freq;
+        double duration = samples / sample_rate;
+
+        // pts - 队内剩余Byte的时间 = 音频时钟
+        is->audio_clock2 = is->audio_enqueue_tail_clock - duration;
+        qCDebug(logPts) << "ffmpeg-simple-player audio_clock:" << is->audio_clock2;
     }
 
     int ret = is->audio_buf_q.dequeue(stream, len, m_stop,is->pause);
@@ -187,9 +218,11 @@ void MyAudioDecodeThread::getAudioData(unsigned char *stream, int len)
 
         // pts - 队内剩余Byte的时间 = 音频时钟
         is->audio_pts_clock = is->audio_enqueue_pts - duration;
+        is->audio_clock2 = is->audio_enqueue_tail_clock - duration;
         qCDebug(logPts) << "audio_clock:" << is->audio_clock
                         << "\t\t audio_pts_clock:" << is->audio_pts_clock
-                        << "\t\t 绝对差：" << abs(is->audio_clock - is->audio_pts_clock);
+                        << "\t\t 绝对差：" << abs(is->audio_clock - is->audio_pts_clock)
+                        << "\t\t audio_clock2:" << is->audio_clock2;
     }
 }
 

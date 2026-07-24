@@ -80,6 +80,9 @@ struct FFmpegPlayerCtx {
     //使用解码frame.pts-出队size作为音频时钟
     std::atomic<double> audio_enqueue_pts = 0;
     std::atomic<double> audio_pts_clock = 0;
+    //这就和 ffmpeg-simple-player 的核心思想一致：用已入队音频末尾时间，减去队列里还没播放的音频时长。
+    std::atomic<double> audio_enqueue_tail_clock = 0;//解码frame.pts + frame的PCM播放持续时间
+    std::atomic<double> audio_clock2 = 0;
 
     /* 暂停功能：只需要暂停消费端，生产端不需要控制
      * 1、暂停音频播放设备：SDL_PauseAudio(0);//跟OpenGL一样是状态机，可全局调用
