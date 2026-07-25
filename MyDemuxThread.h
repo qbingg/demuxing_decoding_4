@@ -53,6 +53,8 @@ public:
 
 signals:
     void sendMessage();
+    void sendAudioPktIDR(double pts);
+    void sendVideoPktIDR(double pts);
 
 private:
     FFmpegPlayerCtx *is = nullptr;

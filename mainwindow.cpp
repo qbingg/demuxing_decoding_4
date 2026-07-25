@@ -4,6 +4,7 @@
 Q_LOGGING_CATEGORY(logDurBar, "player.durBar") // 定义，名称为 ""
 Q_LOGGING_CATEGORY(logSeek, "seek")
 Q_LOGGING_CATEGORY(logPts, "pts")
+Q_LOGGING_CATEGORY(logIDR, "idr")
 
 void stream_seek(FFmpegPlayerCtx *is, double targetSec, int rel = -1)
 {
@@ -262,6 +263,28 @@ void MainWindow::on_pushButton_clicked()
 
     });
     m_durTimer.start(100);
+
+    connect(m_demuxThread,&MyDemuxThread::sendAudioPktIDR,this,[=](double pts){
+        QLineSeries *idr = new QLineSeries();
+        idr->setPen(QPen(Qt::red, 2));
+        ui->durPcmChartView->chart()->addSeries(idr);
+        //波形数据使用这两个坐标轴映射
+        idr->attachAxis(m_durAxisX);
+        idr->attachAxis(m_durAxisY);
+        idr->append(pts, -32768);
+        idr->append(pts, 32767);
+        qCDebug(logIDR)<<"durationSerise->append(duration, 32767);"<<pts;
+    });
+    connect(m_demuxThread,&MyDemuxThread::sendVideoPktIDR,this,[=](double pts){
+        QLineSeries *idr = new QLineSeries();
+        idr->setPen(QPen(Qt::black, 2));
+        ui->durPcmChartView->chart()->addSeries(idr);
+        idr->attachAxis(m_durAxisX);
+        idr->attachAxis(m_durAxisY);
+        idr->append(pts, -32768);
+        idr->append(pts, 32767);
+        qCDebug(logIDR)<<"durationSerise->append(duration, 32767);"<<pts;
+    });
 
     m_demuxThread->start();
     m_myVideoDecodeThread->start();

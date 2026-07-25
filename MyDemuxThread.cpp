@@ -211,9 +211,21 @@ void MyDemuxThread::run()
         }
 
         if(pkt->stream_index == is->video_stream_idx){
+
+            if (pkt->flags & AV_PKT_FLAG_KEY){
+                emit sendVideoPktIDR(pkt->pts * av_q2d(is->video_stream->time_base));
+                qCDebug(logIDR)<<"sendVideoPktIDR";
+            }
+
             is->videoq.enqueue(pkt);
             qDebug()<<"解封装线程：完成生产：视频pkt_size :"<<is->videoq.getSize();
         }else if(pkt->stream_index == is->audio_stream_idx){
+
+            // if (pkt->flags & AV_PKT_FLAG_KEY){
+            //     emit sendAudioPktIDR(pkt->pts * av_q2d(is->audio_stream->time_base));
+            //     qCDebug(logIDR)<<"sendAudioPktIDR";
+            // }
+
             is->audioq.enqueue(pkt);
             qDebug()<<"解封装线程：完成生产：音频pkt_size :"<<is->audioq.getSize();
         }else{
