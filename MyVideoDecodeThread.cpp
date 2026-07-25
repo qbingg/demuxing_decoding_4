@@ -75,7 +75,7 @@ int MyVideoDecodeThread::decode_packet(AVCodecContext *dec, const AVPacket *pkt,
             //结论：时间基用video_stream->time_base
 
             double video_clock = frame->pts * av_q2d(is->video_stream->time_base);
-            double audio_clock = is->audio_clock;
+            double audio_clock = is->audio_clock2;
 
             QString diff = QString::number((video_clock-audio_clock),'d',15);
 

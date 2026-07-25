@@ -201,7 +201,7 @@ void MyAudioDecodeThread::getAudioData(unsigned char *stream, int len)
                                       len / bytes_per_sample,
                                       max,
                                       min);
-            sendpcmPeakBar(duration,max,min);
+            sendpcmPeakBar(is->audio_clock2,max,min);
         }
 
     }

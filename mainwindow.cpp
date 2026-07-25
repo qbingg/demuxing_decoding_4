@@ -257,7 +257,7 @@ void MainWindow::on_pushButton_clicked()
             // no signals here
             //如果用户正在拖拽Slider，则不更新
             if (!ui->horizontalSlider->isSliderDown())
-                ui->horizontalSlider->setValue(playerCtx->audio_clock);
+                ui->horizontalSlider->setValue(playerCtx->audio_clock2);
         }
 
     });
