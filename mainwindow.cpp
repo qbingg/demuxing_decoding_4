@@ -5,6 +5,7 @@ Q_LOGGING_CATEGORY(logDurBar, "player.durBar") // 定义，名称为 ""
 Q_LOGGING_CATEGORY(logSeek, "seek")
 Q_LOGGING_CATEGORY(logPts, "pts")
 Q_LOGGING_CATEGORY(logIDR, "idr")
+Q_LOGGING_CATEGORY(logSDL3, "SDL3")
 
 void stream_seek(FFmpegPlayerCtx *is, double targetSec, int rel = -1)
 {
@@ -302,14 +303,14 @@ void MainWindow::on_btnPause_clicked(bool checked)
         ui->btnPause->setText("继续");
 
         playerCtx->pause = true;
-        SDL_PauseAudio(1);
+        // SDL_PauseAudio(1);
 
 
     }else{
         ui->btnPause->setText("暂停");
 
         playerCtx->pause = false;
-        SDL_PauseAudio(0);
+        // SDL_PauseAudio(0);
     }
 
     qCDebug(logDurBar) << "playerCtx->pause: " << playerCtx->pause;

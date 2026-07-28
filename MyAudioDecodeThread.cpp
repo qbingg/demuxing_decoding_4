@@ -10,6 +10,45 @@ static void FN_Audio_Cb(void *userdata, Uint8 *stream, int len)
     adt->getAudioData(stream,len);
 }
 
+/* this function will be called (usually in a background thread) when the audio stream is consuming data. */
+static void SDLCALL FeedTheAudioStreamMore(void *userdata, SDL_AudioStream *astream, int additional_amount, int total_amount)
+{
+    /* total_amount is how much data the audio stream is eating right now, additional_amount is how much more it needs
+       than what it currently has queued (which might be zero!). You can supply any amount of data here; it will take what
+       it needs and use the extra later. If you don't give it enough, it will take everything and then feed silence to the
+       hardware for the rest. Ideally, though, we always give it what it needs and no extra, so we aren't buffering more
+       than necessary. */
+    // additional_amount /= sizeof (float);  /* convert from bytes to samples */
+    // while (additional_amount > 0) {
+    //     float samples[128];  /* this will feed 128 samples each iteration until we have enough. */
+    //     const int total = SDL_min(additional_amount, SDL_arraysize(samples));
+    //     int i;
+
+    //     /* generate a 440Hz pure tone */
+    //     for (i = 0; i < total; i++) {
+    //         const int freq = 440;
+    //         const float phase = current_sine_sample * freq / 8000.0f;
+    //         samples[i] = SDL_sinf(phase * 2 * SDL_PI_F);
+    //         current_sine_sample++;
+    //     }
+
+    //     /* wrapping around to avoid floating-point errors */
+    //     current_sine_sample %= 8000;
+
+    //     /* feed the new data to the stream. It will queue at the end, and trickle out as the hardware needs more data. */
+    //     SDL_PutAudioStreamData(astream, samples, total * sizeof (float));
+    //     additional_amount -= total;  /* subtract what we've just fed the stream. */
+    // }
+    // Uint8 *samples = NULL;//Uint8 *stream
+    QByteArray samples;
+    samples.reserve(4096 *2);
+    int len = 4096;//临时的魔法数字
+    MyAudioDecodeThread *adt = (MyAudioDecodeThread*)userdata;
+    adt->getAudioData((unsigned char *)samples.data(),len);
+    SDL_PutAudioStreamData(astream, samples.data(), len);
+    qCDebug(logSDL3)<<"samples.size:"<<samples.size();
+}
+
 MyAudioDecodeThread::MyAudioDecodeThread(QObject *parent)
     : QThread(parent)
 {
@@ -265,7 +304,7 @@ void MyAudioDecodeThread::run()
     /* SDL初始化*/
     SDL_AudioSpec spec;
     //SDL initialize
-    if (SDL_Init(SDL_INIT_AUDIO))    // 支持AUDIO
+    if (!SDL_Init(SDL_INIT_AUDIO))    // 支持AUDIO
     {
         fprintf(stderr, "Could not initialize SDL - %s\n", SDL_GetError());
         return;
@@ -281,21 +320,29 @@ void MyAudioDecodeThread::run()
     spec.freq = is->audio_tgt_freq;
     spec.format = is->audio_tgt_sdl_fmt;
     spec.channels = is->audio_tgt_channels;
-    spec.silence = 0;
-    spec.samples = 1024;// 23.2ms -> 46.4ms 每次读取的采样数量，多久产生一次回调和 samples
-    spec.callback = FN_Audio_Cb; // 回调函数
-    spec.userdata = this;
+    // spec.silence = 0;
+    // spec.samples = 1024;// 23.2ms -> 46.4ms 每次读取的采样数量，多久产生一次回调和 samples
+    // spec.callback = FN_Audio_Cb; // 回调函数
+    // spec.userdata = this;
 
     qDebug() <<"spec.freq ="<<is->audio_dec_ctx->sample_rate
              <<"spec.channels ="<<is->audio_dec_ctx->ch_layout.nb_channels;
     //打开音频设备
-    if (SDL_OpenAudio(&spec, NULL))
-    {
-        fprintf(stderr, "Failed to open audio device, %s\n", SDL_GetError());
+    // if (SDL_OpenAudio(&spec, NULL))
+    // {
+    //     fprintf(stderr, "Failed to open audio device, %s\n", SDL_GetError());
+    //     goto _FAIL;
+    // }
+    // //play audio
+    // SDL_PauseAudio(0);
+    static SDL_AudioStream *stream = NULL;
+    stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, FeedTheAudioStreamMore, this);//NULL);
+    if (!stream) {
+        SDL_Log("Couldn't create audio stream: %s", SDL_GetError());
         goto _FAIL;
     }
-    //play audio
-    SDL_PauseAudio(0);
+    /* SDL_OpenAudioDeviceStream starts the device paused. You have to tell it to start! */
+    SDL_ResumeAudioStreamDevice(stream);
 
     while (true) {
 
@@ -333,7 +380,7 @@ void MyAudioDecodeThread::run()
 _FAIL:
     //release some resources
     // 关闭音频设备
-    SDL_CloseAudio();
+    // SDL_CloseAudio();
     //quit SDL
     SDL_Quit();
 end:

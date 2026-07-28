@@ -17,6 +17,7 @@ int main(int argc, char *argv[])
         "seek.debug=false\n"
         "pts.debug=false\n"
         "idr.debug=true\n"
+        "SDL3.debug=true\n"
         );
     qDebug()<<"测试1，qDebug()：这是过滤调试信息的测试。";
     qCDebug(logAudioClock)<<"测试2，qCDebug(logAudioClock)：这是过滤调试信息的测试。";

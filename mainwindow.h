@@ -35,6 +35,7 @@ Q_DECLARE_LOGGING_CATEGORY(logDurBar) // 声明
 Q_DECLARE_LOGGING_CATEGORY(logSeek) // 声明
 Q_DECLARE_LOGGING_CATEGORY(logPts) // 声明
 Q_DECLARE_LOGGING_CATEGORY(logIDR) // 声明
+Q_DECLARE_LOGGING_CATEGORY(logSDL3) // 声明
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -71,7 +72,7 @@ struct FFmpegPlayerCtx {
      */
     int audio_tgt_freq = 48000;
     AVSampleFormat audio_tgt_fmt = AV_SAMPLE_FMT_S16;
-    SDL_AudioFormat audio_tgt_sdl_fmt = AUDIO_S16SYS;
+    SDL_AudioFormat audio_tgt_sdl_fmt = SDL_AUDIO_S16;//AUDIO_S16SYS;
     int audio_tgt_channels = 2;
 
     std::atomic<uint64_t> total_enqueued_pcm_bytes = 0;//记录pcm入队列size数（Byte）

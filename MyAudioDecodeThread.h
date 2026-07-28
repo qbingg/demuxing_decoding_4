@@ -15,7 +15,7 @@ extern "C" {
 
 #include <QDebug>
 #include <QThread>
-#include <SDL.h>
+#include <SDL3/SDL.h>
 
 #include <QLoggingCategory>
 Q_DECLARE_LOGGING_CATEGORY(logAudioClock) // 声明
