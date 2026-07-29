@@ -64,7 +64,7 @@ int MyAudioDecodeThread::decode_packet(AVCodecContext *dec, const AVPacket *pkt,
     // submit the packet to the decoder
     ret = avcodec_send_packet(dec, pkt);
     if (ret < 0) {
-        qDebug() << "Error submitting a packet for decoding (" << av_err2str(ret) << ")";
+        qDebug() << "Error submitting a packet for decoding (";// << av_err2str(ret) << ")";
         return ret;
     }
 
@@ -77,7 +77,7 @@ int MyAudioDecodeThread::decode_packet(AVCodecContext *dec, const AVPacket *pkt,
             if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
                 return 0;
 
-            qDebug() << "Error during decoding (" << av_err2str(ret) << ")";
+            qDebug() << "Error during decoding (";// << av_err2str(ret) << ")";
             return ret;
         }
 

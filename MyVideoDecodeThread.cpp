@@ -8,7 +8,8 @@ MyVideoDecodeThread::MyVideoDecodeThread(QObject *parent)
     : QThread(parent)
 {
     // 开始时刻
-    m_start = std::chrono::high_resolution_clock::now();
+    // m_start = std::chrono::high_resolution_clock::now();
+    m_start = std::chrono::steady_clock::now();
 }
 
 MyVideoDecodeThread::~MyVideoDecodeThread(){}
@@ -30,7 +31,7 @@ int MyVideoDecodeThread::decode_packet(AVCodecContext *dec, const AVPacket *pkt,
     // submit the packet to the decoder
     ret = avcodec_send_packet(dec, pkt);
     if (ret < 0) {
-        qDebug() << "Error submitting a packet for decoding (" << av_err2str(ret) << ")";
+        qDebug() << "Error submitting a packet for decoding (";// << av_err2str(ret) << ")";
         return ret;
     }
 
@@ -43,7 +44,7 @@ int MyVideoDecodeThread::decode_packet(AVCodecContext *dec, const AVPacket *pkt,
             if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
                 return 0;
 
-            qDebug() << "Error during decoding (" << av_err2str(ret) << ")";
+            qDebug() << "Error during decoding (";// << av_err2str(ret) << ")";
             return ret;
         }
 

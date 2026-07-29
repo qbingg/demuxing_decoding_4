@@ -20,6 +20,9 @@ qt_add_executable(demuxing_decoding_4
     MyYUV420POpenGLWidget.h
 )
 
+# MinGW/gcc：把当前源码目录（MyGLWidget.h 所在目录）加入头文件搜索路径
+target_include_directories(demuxing_decoding_4 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
 target_link_libraries(demuxing_decoding_4
     PRIVATE
         Qt::Core
